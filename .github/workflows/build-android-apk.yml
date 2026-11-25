@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Isi tag untuk membuat GitHub prerelease, misalnya v0.1.0-beta.1. Kosongkan untuk build APK biasa."
+        description: "Isi versi rilis stabil, misalnya v1.0.0. Kosongkan untuk build APK tanpa menerbitkan release."
         required: false
         type: string
         default: ""
@@ -79,14 +79,14 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleDebug
 
-      - name: Publish GitHub prerelease
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-beta]')) }}
+      - name: Publish stable GitHub Release
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-release]')) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v0.1.0-beta.4' || inputs.release_version }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.0.0' || inputs.release_version }}
         run: |
-          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
-            echo "Use a version such as v0.1.0-beta.1"
+          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+            echo "Use a stable version such as v1.0.0"
             exit 1
           fi
 
@@ -96,29 +96,27 @@ jobs:
           fi
 
           cat > release-notes.md <<'NOTES'
-          ## DuitKu beta
+          ## DuitKu 1.0.0
 
-          This is a beta build intended for manual Android testing.
+          Rilis stabil pertama DuitKu untuk distribusi GitHub.
 
-          - Includes the polished premium interface with subtle entrance, card, chart, button, and navigation animations.
-          - Includes the mobile-first layout and in-app update checker.
-          - Includes income and expense tracking, summaries, cashflow chart, search, filters, and CSV export.
-          - Transaction data is stored locally on the device.
-          - The update checker finds the latest APK and downloads it directly without opening the Releases page.
-          - Android still asks the user to confirm APK installation.
-          - This APK is built with the Android debug variant and is not the production-signed Play Store package.
-          - Updating over an older install requires the same signing key. Builds signed with different debug keys may require uninstalling the old app first.
-          - Please back up important transaction data using CSV export before testing or reinstalling.
+          - Tampilan premium yang responsif dengan animasi lembut pada dashboard, kartu, grafik, tombol, dan navigasi.
+          - Navigasi mobile dan pemeriksa pembaruan langsung di dalam aplikasi.
+          - Pencatatan pemasukan dan pengeluaran, ringkasan saldo, grafik arus kas, pencarian, filter, dan ekspor CSV.
+          - Data transaksi disimpan secara lokal di perangkat.
+          - Pemeriksa pembaruan hanya menawarkan rilis stabil terbaru dan menyediakan unduhan APK langsung.
+          - Android tetap meminta persetujuan pengguna saat memasang APK.
+          - Paket APK ini masih dibangun menggunakan varian debug, bukan paket produksi yang ditandatangani untuk Play Store.
+          - Agar pembaruan dapat menimpa instalasi lama, semua APK harus ditandatangani dengan keystore yang sama.
+          - Ekspor CSV sebelum mengganti APK untuk menjaga cadangan transaksi.
           NOTES
 
-          gh release create "$RELEASE_VERSION" \
-            "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "DuitKu $RELEASE_VERSION (Beta)" \
-            --notes-file release-notes.md \
-            --prerelease \
-            --latest=false
+          gh release create "$RELEASE_VERSION" \\
+            "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" \\
+            --repo "$GITHUB_REPOSITORY" \\
+            --target "$GITHUB_SHA" \\
+            --title "DuitKu $RELEASE_VERSION" \\
+            --notes-file release-notes.md
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
