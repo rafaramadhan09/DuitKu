@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="duitku-version" content="0.1.0-beta.3">
   <meta name="theme-color" content="#1c8b5c">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -46,6 +47,7 @@
         <div class="breadcrumb">Keuangan pribadi <span>/</span> <strong>Ringkasan</strong></div>
         <div class="topbar-right">
           <span class="today-label" id="todayLabel">Hari ini</span>
+          <a class="update-shortcut" href="#app-update" aria-label="Periksa pembaruan DuitKu"><span aria-hidden="true">↻</span><span>Update</span></a>
           <button class="avatar" type="button" aria-label="Profil pengguna">K</button>
         </div>
       </header>
@@ -214,6 +216,28 @@
             <p class="form-feedback" id="formFeedback" role="status" aria-live="polite"></p>
           </form>
         </aside>
+      </section>
+
+      <section class="panel app-update-panel" id="app-update" aria-labelledby="appUpdateTitle">
+        <div class="app-update-main">
+          <div class="app-update-heading">
+            <div>
+              <p class="eyebrow">DUITKU APP</p>
+              <h2 id="appUpdateTitle">Pembaruan aplikasi</h2>
+              <p class="panel-subtitle">Versi terpasang <strong id="installedVersion">v0.1.0-beta.3</strong></p>
+            </div>
+            <span class="app-update-icon" aria-hidden="true">↻</span>
+          </div>
+          <div class="app-update-content">
+            <p class="update-status" id="updateStatus" role="status" aria-live="polite">Periksa apakah versi terbaru DuitKu sudah tersedia.</p>
+            <p class="update-notes" id="updateNotes" hidden></p>
+            <div class="app-update-actions">
+              <button class="button button-outline" id="checkUpdateButton" type="button">Periksa pembaruan</button>
+              <a class="button button-primary" id="downloadUpdateButton" href="#" target="_blank" rel="noopener noreferrer" hidden>Unduh APK terbaru <span aria-hidden="true">↓</span></a>
+            </div>
+            <p class="update-footnote">Unduhan akan membuka file APK. Ikuti konfirmasi Android untuk memasangnya. Pembaruan langsung tanpa menghapus aplikasi memerlukan kunci tanda tangan yang sama dengan versi terpasang.</p>
+          </div>
+        </div>
       </section>
 
       <footer class="page-footer">
