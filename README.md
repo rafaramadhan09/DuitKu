@@ -11,7 +11,9 @@ Aplikasi pencatat keuangan pribadi untuk membantu mengelola pemasukan, pengeluar
 - Menampilkan grafik arus kas enam bulan terakhir.
 - Melihat, mencari, dan memfilter transaksi.
 - Menghapus transaksi.
-- Mengekspor seluruh transaksi ke file CSV.
+- Memisahkan saldo cash dan m-banking/e-wallet.
+- Navigasi per halaman, optimasi tampilan mobile, dan animasi transisi.
+- Mengekspor transaksi dan ringkasan dompet ke workbook Excel (.xls).
 
 ## Menjalankan aplikasi
 
