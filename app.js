@@ -261,7 +261,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.0.0";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.1.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateDownloadButton = document.getElementById("downloadUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
