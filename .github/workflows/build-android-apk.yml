@@ -85,14 +85,16 @@ jobs:
           const fs = require("node:fs");
           const vm = require("node:vm");
           const source = fs.readFileSync("app.js", "utf8");
-          const match = source.match(/  function isValidDateString\\(value\\) \\{[\\s\\S]*?\\n  \\}/);
-          if (!match) throw new Error("Date validation helper missing");
+          const start = source.indexOf("  function isValidDateString(value) {");
+          const close = source.indexOf("\\n  }", start);
+          if (start < 0 || close < 0) throw new Error("Date validation helper missing");
+          const helper = source.slice(start, close + 4);
           function localDateString(date) {
             return date.getFullYear() + "-" +
               String(date.getMonth() + 1).padStart(2, "0") + "-" +
               String(date.getDate()).padStart(2, "0");
           }
-          const validate = vm.runInNewContext("(" + match[0].trim() + ")", { localDateString });
+          const validate = vm.runInNewContext("(" + helper.trim() + ")", { localDateString });
           for (const value of ["2026-11-25", "2024-02-29"]) {
             if (!validate(value)) throw new Error("Expected valid date: " + value);
           }
