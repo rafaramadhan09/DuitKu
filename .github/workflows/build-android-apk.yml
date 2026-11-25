@@ -130,9 +130,9 @@ jobs:
           fi
 
           cat > release-notes.md <<'NOTES'
-          ## DuitKu 1.2.0
+          ## DuitKu 1.3.0
 
-          Polesan lanjutan untuk pencatatan keuangan yang lebih nyaman dan rapi.
+          Transfer antardompet, ekspor Excel Android yang dapat dibagikan, dan pembaruan fitur web langsung di dalam aplikasi.
 
           - Penarikan M-Banking ke Cash dicatat sebagai transfer internal; total pemasukan/pengeluaran tidak berubah.
           - Ekspor Excel Android menggunakan menu berbagi native untuk menyimpan atau membuka laporan.
