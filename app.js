@@ -439,12 +439,16 @@
     });
   }
 
-  document.querySelectorAll(".side-nav .nav-link").forEach(function (link) {
-    link.addEventListener("click", function () {
-      document.querySelectorAll(".side-nav .nav-link").forEach(function (item) {
-        item.classList.toggle("active", item === link);
-      });
-    });
+  function switchPage(page) {
+    if (!document.querySelector('[data-page-panel="' + page + '"]')) page = "home";
+    document.querySelectorAll("[data-page-panel]").forEach(function (panel) { panel.classList.toggle("active", panel.getAttribute("data-page-panel") === page); });
+    document.querySelectorAll("[data-page]").forEach(function (nav) { nav.classList.toggle("active", nav.getAttribute("data-page") === page); });
+    var titles = {home:"Ringkasan",transactions:"Transaksi",add:"Catat transaksi",wallets:"Dompet",export:"Export & data"};
+    var title = document.getElementById("pageTitle"); if (title) title.textContent = titles[page] || "DuitKu";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  document.querySelectorAll("[data-page]").forEach(function (link) {
+    link.addEventListener("click", function (event) { event.preventDefault(); switchPage(link.getAttribute("data-page")); });
   });
 
   transactionRows.addEventListener("click", function (event) {
@@ -466,37 +470,23 @@
   });
 
   document.getElementById("exportButton").addEventListener("click", function () {
-    if (!transactions.length) {
-      showFeedback("Belum ada transaksi untuk diekspor.", true);
-      return;
-    }
-    var rows = [["Tanggal", "Jenis", "Nama", "Kategori", "Jumlah", "Catatan"]];
-    transactions.slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).forEach(function (item) {
-      rows.push([
-        item.date,
-        item.type === "income" ? "Pemasukan" : "Pengeluaran",
-        item.name,
-        item.category,
-        String(item.amount),
-        item.note || ""
-      ]);
-    });
-    var csv = "\uFEFF" + rows.map(function (row) {
-      return row.map(function (cell) {
-        return '"' + String(cell).replace(/"/g, '""') + '"';
-      }).join(",");
-    }).join("\r\n");
-
-    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "duitku-transaksi-" + localDateString() + ".csv";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    showFeedback("File CSV berhasil disiapkan.");
+    if (!transactions.length) { var fb=document.getElementById("exportFeedback"); if(fb) fb.textContent="Belum ada transaksi untuk diekspor."; showFeedback("Belum ada transaksi untuk diekspor.", true); return; }
+    function xml(v) { return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+    function cell(v,type) { return "<Cell><Data ss:Type=\"" + (type || "String") + "\">" + xml(v) + "</Data></Cell>"; }
+    var sorted=transactions.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+    var rows="<Row>"+["Tanggal","Jenis","Nama transaksi","Kategori","Dompet","Jumlah (IDR)","Catatan"].map(function(x){return cell(x);}).join("")+"</Row>";
+    sorted.forEach(function(item){rows+="<Row>"+[item.date,item.type==="income"?"Pemasukan":"Pengeluaran",item.name,item.category,item.wallet==="cash"?"Cash":"M-Banking",Number(item.amount),item.note||""].map(function(x,i){return cell(x,i===5?"Number":"String");}).join("")+"</Row>";});
+    var totals=walletBalances();
+    var summary="<Row>"+cell("Ringkasan")+cell("Nilai")+"</Row>"+
+      "<Row>"+cell("Total Saldo")+cell(totals.bank+totals.cash,"Number")+"</Row>"+
+      "<Row>"+cell("Saldo M-Banking")+cell(totals.bank,"Number")+"</Row>"+
+      "<Row>"+cell("Saldo Cash")+cell(totals.cash,"Number")+"</Row>"+
+      "<Row>"+cell("Total Pemasukan")+cell(transactions.filter(function(x){return x.type==="income";}).reduce(function(s,x){return s+Number(x.amount);},0),"Number")+"</Row>"+
+      "<Row>"+cell("Total Pengeluaran")+cell(transactions.filter(function(x){return x.type==="expense";}).reduce(function(s,x){return s+Number(x.amount);},0),"Number")+"</Row>";
+    var book="<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"><Worksheet ss:Name=\"Transaksi\"><Table>"+rows+"</Table></Worksheet><Worksheet ss:Name=\"Ringkasan\"><Table>"+summary+"</Table></Worksheet></Workbook>";
+    var blob=new Blob([book],{type:"application/vnd.ms-excel;charset=utf-8"});
+    var url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="DuitKu-Laporan-"+localDateString()+".xls";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    var fb=document.getElementById("exportFeedback"); if(fb) fb.textContent="Excel berhasil diekspor. Lembar transaksi dan ringkasan saldo tersedia."; showFeedback("File Excel berhasil disiapkan.");
   });
 
   document.getElementById("todayLabel").textContent = new Intl.DateTimeFormat("id-ID", {
