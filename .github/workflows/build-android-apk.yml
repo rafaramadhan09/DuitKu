@@ -85,7 +85,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.0.0' || inputs.release_version }}
         run: |
-          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Use a stable version such as v1.0.0"
             exit 1
           fi
@@ -111,12 +111,7 @@ jobs:
           - Ekspor CSV sebelum mengganti APK untuk menjaga cadangan transaksi.
           NOTES
 
-          gh release create "$RELEASE_VERSION" \\
-            "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" \\
-            --repo "$GITHUB_REPOSITORY" \\
-            --target "$GITHUB_SHA" \\
-            --title "DuitKu $RELEASE_VERSION" \\
-            --notes-file release-notes.md
+          gh release create "$RELEASE_VERSION" "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DuitKu $RELEASE_VERSION" --notes-file release-notes.md
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
