@@ -1,4 +1,4 @@
-name: Build DuitKu Android APK
+name: Build & Release DuitKu Android
 
 on:
   push:
@@ -16,9 +16,15 @@ on:
       - "scripts/**"
       - ".github/workflows/build-android-apk.yml"
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Isi tag untuk membuat GitHub prerelease, misalnya v0.1.0-beta.1. Kosongkan untuk build APK biasa."
+        required: false
+        type: string
+        default: ""
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -72,6 +78,42 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew assembleDebug
+
+      - name: Publish GitHub prerelease
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_version != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "Use a version such as v0.1.0-beta.1"
+            exit 1
+          fi
+
+          if gh release view "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_VERSION already exists."
+            exit 1
+          fi
+
+          cat > release-notes.md <<'NOTES'
+          ## DuitKu beta
+
+          This is a beta build intended for manual Android testing.
+
+          - Includes income and expense tracking, summaries, cashflow chart, search, filters, and CSV export.
+          - Transaction data is stored locally on the device.
+          - This APK is built with the Android debug variant and is not the production-signed Play Store package.
+          - Please back up important transaction data using CSV export before testing or reinstalling.
+          NOTES
+
+          gh release create "$RELEASE_VERSION" \
+            "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "DuitKu $RELEASE_VERSION (Beta)" \
+            --notes-file release-notes.md \
+            --prerelease \
+            --latest=false
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
