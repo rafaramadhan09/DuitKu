@@ -255,7 +255,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "0.1.0-beta.3";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.0.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateDownloadButton = document.getElementById("downloadUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
@@ -326,7 +326,7 @@
 
       var releases = await response.json();
       var candidates = releases.filter(function (release) {
-        return release && !release.draft && Array.isArray(release.assets) &&
+        return release && !release.draft && !release.prerelease && Array.isArray(release.assets) &&
           release.assets.some(function (asset) { return /\.apk$/i.test(asset.name || ""); });
       });
       candidates.sort(function (a, b) {
