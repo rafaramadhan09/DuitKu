@@ -20,6 +20,7 @@
   var transactions = loadTransactions();
   var activeFilter = "all";
   var searchTerm = "";
+  var walletSelect = document.getElementById("transactionWallet");
 
   var form = document.getElementById("transactionForm");
   var typeInputs = document.querySelectorAll('input[name="type"]');
@@ -82,10 +83,8 @@
           Number.isFinite(Number(item.amount)) &&
           Number(item.amount) > 0 &&
           typeof item.date === "string";
-      });
-    } catch (error) {
-      return [];
-    }
+      }).map(function (item) { item.wallet = item.wallet === "cash" ? "cash" : "bank"; return item; });
+    } catch (error) { return []; }
   }
 
   function saveTransactions() {
@@ -131,6 +130,8 @@
     }, { income: 0, expense: 0 });
   }
 
+  function walletBalances() { return transactions.reduce(function(t,item){var w=item.wallet==="cash"?"cash":"bank";t[w]+=item.type==="income"?Number(item.amount):-Number(item.amount);return t;},{bank:0,cash:0}); }
+
   function renderSummary() {
     var totals = totalsForMonth(monthKey(localDateString()));
     var allIncome = 0;
@@ -141,6 +142,9 @@
     });
 
     document.getElementById("balanceValue").textContent = money(allIncome - allExpense);
+    var wt=walletBalances();
+    ["bankBalance","bankBalancePage"].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=money(wt.bank);});
+    ["cashBalance","cashBalancePage"].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=money(wt.cash);});
     document.getElementById("incomeValue").textContent = money(totals.income);
     document.getElementById("expenseValue").textContent = money(totals.expense);
   }
@@ -225,10 +229,12 @@
       var income = item.type === "income";
       var icon = icons[item.category] || "•";
       var note = item.note ? '<span class="transaction-note">' + escapeHTML(item.note) + '</span>' : "";
+      var walletName = item.wallet === "cash" ? "Cash" : "M-Banking";
       return '<tr>' +
         '<td><div class="transaction-name"><span class="transaction-symbol ' + (income ? "income" : "expense") + '">' +
         escapeHTML(icon) + '</span><span>' + escapeHTML(item.name) + note + '</span></div></td>' +
         '<td><span class="category-pill">' + escapeHTML(item.category) + '</span></td>' +
+        '<td><span class="wallet-pill">' + walletName + '</span></td>' +
         '<td>' + escapeHTML(formatDate(item.date)) + '</td>' +
         '<td class="amount-cell ' + (income ? "" : "negative") + '">' + (income ? "+" : "−") +
         escapeHTML(money(item.amount)) + '</td>' +
@@ -395,6 +401,7 @@
       name: name,
       amount: Math.round(amount),
       category: category,
+      wallet: wallet === "cash" ? "cash" : "bank",
       date: date,
       note: note
     };
@@ -411,6 +418,7 @@
     updateCategoryOptions();
     showFeedback("Transaksi berhasil disimpan.");
     renderAll();
+    switchPage("home");
     document.getElementById("transactionName").focus();
   });
 
