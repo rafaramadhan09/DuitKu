@@ -263,7 +263,7 @@
 
   function parseVersion(value) {
     var match = String(value || "").trim().replace(/^v/i, "")
-      .match(/^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?$/);
+      .match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
     if (!match) return null;
     return {
       core: [Number(match[1]), Number(match[2]), Number(match[3])],
@@ -286,8 +286,8 @@
       if (a.prerelease[j] === undefined) return -1;
       if (b.prerelease[j] === undefined) return 1;
       if (a.prerelease[j] === b.prerelease[j]) continue;
-      var aNumeric = /^\\d+$/.test(a.prerelease[j]);
-      var bNumeric = /^\\d+$/.test(b.prerelease[j]);
+      var aNumeric = /^\d+$/.test(a.prerelease[j]);
+      var bNumeric = /^\d+$/.test(b.prerelease[j]);
       if (aNumeric && bNumeric) {
         return Number(a.prerelease[j]) > Number(b.prerelease[j]) ? 1 : -1;
       }
@@ -327,7 +327,7 @@
       var releases = await response.json();
       var candidates = releases.filter(function (release) {
         return release && !release.draft && Array.isArray(release.assets) &&
-          release.assets.some(function (asset) { return /\\.apk$/i.test(asset.name || ""); });
+          release.assets.some(function (asset) { return /\.apk$/i.test(asset.name || ""); });
       });
       candidates.sort(function (a, b) {
         return compareVersions(b.tag_name, a.tag_name);
@@ -345,7 +345,7 @@
       }
 
       var apk = latest.assets.find(function (asset) {
-        return /\\.apk$/i.test(asset.name || "");
+        return /\.apk$/i.test(asset.name || "");
       });
       if (!apk || !apk.browser_download_url) {
         updateStatus.textContent = "Versi " + latest.tag_name + " tersedia, tetapi file APK belum ditemukan.";
