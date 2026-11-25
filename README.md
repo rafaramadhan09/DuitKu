@@ -40,3 +40,22 @@ DuitKu dilengkapi manifest dan service worker sehingga dapat dipasang dari brows
 Workflow `.github/workflows/deploy-pages.yml` menyiapkan publikasi otomatis ke GitHub Pages setiap ada perubahan di branch `main`. Pastikan GitHub Pages menggunakan sumber **GitHub Actions** pada pengaturan repository.
 
 DuitKu adalah alat pencatatan sederhana, bukan layanan perbankan dan tidak terhubung ke rekening bank.
+
+
+## Build APK Android
+
+Repository ini juga menyiapkan build Android menggunakan Capacitor 8.
+
+1. Buka tab **Actions** di GitHub.
+2. Pilih workflow **Build DuitKu Android APK**.
+3. Jalankan workflow melalui **Run workflow**, atau tunggu build otomatis ketika file aplikasi berubah di `main`.
+4. Setelah workflow berhasil, buka hasil run dan unduh artifact `DuitKu-debug-apk`.
+
+APK yang dihasilkan adalah APK debug untuk pengujian dan pemasangan manual. APK ini belum ditandatangani dengan kunci rilis untuk distribusi Play Store.
+
+### Teknologi Android
+
+- Capacitor 8
+- Node.js 22
+- Java 21
+- Android SDK API 36
