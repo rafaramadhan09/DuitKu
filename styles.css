@@ -1092,3 +1092,12 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
   .app-page.active,.wallet-card::before{animation:none!important}
   .app-toast,.delete-button,.mobile-nav-item,.button,.panel,.wallet-card-top .wallet-chip{transition:none!important}
 }
+
+/* Transfer between wallets */
+.transfer-panel{margin-top:18px}
+.transfer-form{display:grid;gap:10px}
+.transfer-route{display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0;padding:15px;border:1px solid rgba(28,86,62,.12);border-radius:15px;background:linear-gradient(110deg,rgba(22,70,51,.07),rgba(208,176,111,.11));color:#315b48;font-size:11px;letter-spacing:.12em;font-weight:800}
+.transfer-route strong{font-size:20px;color:#b18c52}
+.transfer-form .submit-button{margin-top:8px}
+.transfer-amount{color:#557e6c!important;font-weight:750}
+@media(max-width:760px){.transfer-route{margin:14px 0}}
