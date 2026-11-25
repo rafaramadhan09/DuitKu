@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Isi versi rilis stabil, misalnya v1.1.0. Kosongkan untuk build APK tanpa menerbitkan release."
+        description: "Isi versi rilis stabil, misalnya v1.3.0. Kosongkan untuk build APK tanpa menerbitkan release."
         required: false
         type: string
         default: ""
@@ -80,6 +80,7 @@ jobs:
       - name: Validate JavaScript
         run: |
           node --check app.js
+          node --check app-bootstrap.js
           node --check scripts/copy-web.mjs
           node --check scripts/apply-android-branding.mjs
           node - <<'NODE'
