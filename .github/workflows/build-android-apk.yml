@@ -83,7 +83,7 @@ jobs:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-beta]')) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v0.1.0-beta.3' || inputs.release_version }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v0.1.0-beta.4' || inputs.release_version }}
         run: |
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
             echo "Use a version such as v0.1.0-beta.1"
@@ -100,7 +100,8 @@ jobs:
 
           This is a beta build intended for manual Android testing.
 
-          - Includes the refreshed mobile-first interface and in-app update checker.
+          - Includes the polished premium interface with subtle entrance, card, chart, button, and navigation animations.
+          - Includes the mobile-first layout and in-app update checker.
           - Includes income and expense tracking, summaries, cashflow chart, search, filters, and CSV export.
           - Transaction data is stored locally on the device.
           - The update checker finds the latest APK and downloads it directly without opening the Releases page.
