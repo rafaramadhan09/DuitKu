@@ -25,7 +25,7 @@ Aplikasi menggunakan HTML, CSS, dan JavaScript tanpa dependensi tambahan.
 
 ## Penyimpanan data
 
-Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan. Versi awal belum menggunakan akun, server, atau sinkronisasi antarperangkat. Ekspor CSV secara berkala untuk membuat cadangan.
+Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan. Versi ini belum menggunakan akun, server, atau sinkronisasi antarperangkat. Ekspor CSV secara berkala untuk membuat cadangan.
 
 ## Struktur file
 
