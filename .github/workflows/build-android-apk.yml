@@ -81,6 +81,26 @@ jobs:
           node --check app.js
           node --check scripts/copy-web.mjs
           node --check scripts/apply-android-branding.mjs
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const vm = require("node:vm");
+          const source = fs.readFileSync("app.js", "utf8");
+          const match = source.match(/  function isValidDateString\\(value\\) \\{[\\s\\S]*?\\n  \\}/);
+          if (!match) throw new Error("Date validation helper missing");
+          function localDateString(date) {
+            return date.getFullYear() + "-" +
+              String(date.getMonth() + 1).padStart(2, "0") + "-" +
+              String(date.getDate()).padStart(2, "0");
+          }
+          const validate = vm.runInNewContext("(" + match[0].trim() + ")", { localDateString });
+          for (const value of ["2026-11-25", "2024-02-29"]) {
+            if (!validate(value)) throw new Error("Expected valid date: " + value);
+          }
+          for (const value of ["2026-02-30", "2026-2-5", "not-a-date", ""]) {
+            if (validate(value)) throw new Error("Expected invalid date: " + value);
+          }
+          console.log("Date validation smoke tests passed.");
+          NODE
 
       - name: Build debug APK
         working-directory: android
@@ -96,11 +116,6 @@ jobs:
         run: |
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Use a stable version such as v1.2.0"
-            exit 1
-          fi
-
-          if gh release view "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $RELEASE_VERSION already exists."
             exit 1
           fi
 
@@ -121,7 +136,13 @@ jobs:
           - Cadangkan transaksi melalui Excel sebelum mengganti instalasi jika Android meminta pemasangan yang tidak mempertahankan data.
           NOTES
 
-          gh release create "$RELEASE_VERSION" "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DuitKu $RELEASE_VERSION" --notes-file release-notes.md
+          if ! gh release view "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DuitKu $RELEASE_VERSION" --notes-file release-notes.md --draft
+          fi
+
+          cp android/app/build/outputs/apk/debug/app-debug.apk "DuitKu-$RELEASE_VERSION.apk"
+          gh release upload "$RELEASE_VERSION" "DuitKu-$RELEASE_VERSION.apk" --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --title "DuitKu $RELEASE_VERSION" --notes-file release-notes.md --draft=false
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
