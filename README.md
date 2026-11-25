@@ -31,4 +31,12 @@ Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan.
 - `styles.css` — tampilan responsif.
 - `app.js` — logika transaksi, ringkasan, grafik, penyimpanan, dan ekspor.
 
+## Instalasi seperti aplikasi
+
+DuitKu dilengkapi manifest dan service worker sehingga dapat dipasang dari browser yang mendukung PWA setelah situs dipublikasikan melalui HTTPS. Buka situs di browser Android, lalu gunakan menu browser **Tambahkan ke layar utama** atau **Install app** bila tersedia. Versi ini tetap menyimpan data di browser perangkat dan belum menyinkronkan data ke akun atau server.
+
+## Publikasi
+
+Workflow `.github/workflows/deploy-pages.yml` menyiapkan publikasi otomatis ke GitHub Pages setiap ada perubahan di branch `main`. Pastikan GitHub Pages menggunakan sumber **GitHub Actions** pada pengaturan repository.
+
 DuitKu adalah alat pencatatan sederhana, bukan layanan perbankan dan tidak terhubung ke rekening bank.
