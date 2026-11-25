@@ -39,7 +39,7 @@
   }
 
   function isValidDateString(value) {
-    if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     var date = new Date(value + "T00:00:00");
     return !Number.isNaN(date.getTime()) && localDateString(date) === value;
   }
@@ -288,7 +288,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.1.0";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.2.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateDownloadButton = document.getElementById("downloadUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
