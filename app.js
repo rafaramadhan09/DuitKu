@@ -38,6 +38,12 @@
     return year + "-" + month + "-" + day;
   }
 
+  function isValidDateString(value) {
+    if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+    var date = new Date(value + "T00:00:00");
+    return !Number.isNaN(date.getTime()) && localDateString(date) === value;
+  }
+
   function monthKey(dateString) {
     return String(dateString || "").slice(0, 7);
   }
@@ -77,13 +83,18 @@
       var parsed = saved ? JSON.parse(saved) : [];
       if (!Array.isArray(parsed)) return [];
       return parsed.filter(function (item) {
-        return item && typeof item.id === "string" &&
+        return item && typeof item.id === "string" && item.id.length > 0 &&
           (item.type === "income" || item.type === "expense") &&
-          typeof item.name === "string" &&
-          Number.isFinite(Number(item.amount)) &&
-          Number(item.amount) > 0 &&
-          typeof item.date === "string";
-      }).map(function (item) { item.wallet = item.wallet === "cash" ? "cash" : "bank"; return item; });
+          typeof item.name === "string" && item.name.trim().length > 0 &&
+          Number.isSafeInteger(Number(item.amount)) && Number(item.amount) > 0 &&
+          isValidDateString(item.date) &&
+          typeof item.category === "string" && item.category.trim().length > 0;
+      }).map(function (item) {
+        item.amount = Number(item.amount);
+        item.wallet = item.wallet === "cash" ? "cash" : "bank";
+        item.note = typeof item.note === "string" ? item.note : "";
+        return item;
+      });
     } catch (error) { return []; }
   }
 
@@ -93,6 +104,7 @@
       return true;
     } catch (error) {
       showFeedback("Penyimpanan browser penuh atau tidak tersedia.", true);
+      showToast("Data belum tersimpan. Periksa ruang penyimpanan perangkat.", true);
       return false;
     }
   }
@@ -100,6 +112,20 @@
   function showFeedback(message, isError) {
     feedback.textContent = message || "";
     feedback.style.color = isError ? "#c96058" : "";
+  }
+
+  var toastTimer = null;
+
+  function showToast(message, isError) {
+    var toast = document.getElementById("appToast");
+    if (!toast) return;
+    toast.textContent = message || "";
+    toast.classList.toggle("is-error", Boolean(isError));
+    toast.classList.add("visible");
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () {
+      toast.classList.remove("visible");
+    }, 2800);
   }
 
   function selectedType() {
@@ -239,7 +265,8 @@
         '<td class="amount-cell ' + (income ? "" : "negative") + '">' + (income ? "+" : "−") +
         escapeHTML(money(item.amount)) + '</td>' +
         '<td><button class="delete-button" type="button" data-delete="' + escapeHTML(item.id) +
-        '" aria-label="Hapus transaksi ' + escapeHTML(item.name) + '" title="Hapus transaksi">×</button></td>' +
+        '" aria-label="Hapus transaksi ' + escapeHTML(item.name) + '" title="Hapus transaksi">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6"/></svg><span>Hapus</span></button></td>' +
         '</tr>';
     }).join("");
 
@@ -389,7 +416,7 @@
     var note = String(data.get("note") || "").trim();
     var wallet = String(data.get("wallet") || "bank");
 
-    if (!name || !Number.isFinite(amount) || amount <= 0 || !date || categories[type].indexOf(category) === -1) {
+    if (!name || !Number.isSafeInteger(amount) || amount <= 0 || !isValidDateString(date) || categories[type].indexOf(category) === -1) {
       showFeedback("Periksa kembali nama, jumlah, tanggal, dan kategori.", true);
       return;
     }
@@ -420,6 +447,7 @@
     showFeedback("Transaksi berhasil disimpan.");
     renderAll();
     switchPage("home");
+    showToast("Transaksi berhasil disimpan.");
     document.getElementById("transactionName").focus();
   });
 
@@ -466,7 +494,7 @@
     var id = button.getAttribute("data-delete");
     var selected = transactions.find(function (item) { return item.id === id; });
     if (!selected) return;
-    if (!window.confirm('Hapus transaksi "' + selected.name + '"?')) return;
+    if (!window.confirm('Hapus transaksi "' + selected.name + '" senilai ' + money(selected.amount) + '?\\nSaldo dompet akan dihitung ulang.')) return;
 
     var oldTransactions = transactions;
     transactions = transactions.filter(function (item) { return item.id !== id; });
@@ -476,6 +504,7 @@
     }
     showFeedback("Transaksi berhasil dihapus.");
     renderAll();
+    showToast("Transaksi dihapus. Saldo dompet sudah diperbarui.");
   });
 
   document.getElementById("exportButton").addEventListener("click", function () {

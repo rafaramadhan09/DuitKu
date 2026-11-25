@@ -1047,3 +1047,48 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
 .button-primary{background:linear-gradient(125deg,#174c37,#28704c)!important;box-shadow:0 8px 20px rgba(25,75,52,.18)!important}.button-primary:hover{transform:translateY(-2px);box-shadow:0 12px 25px rgba(25,75,52,.22)!important}
 @media(max-width:760px){.sidebar{display:none!important}.main-content{margin:0!important;padding:calc(18px + env(safe-area-inset-top)) 15px calc(92px + env(safe-area-inset-bottom))!important}.topbar{padding:0 0 16px!important}.breadcrumb{font-size:12px}.topbar-right{gap:8px}.today-label{display:none}.avatar{display:none}.page-heading{display:block!important;margin:10px 0 18px!important}.page-heading h1{font-size:25px!important;line-height:1.18}.page-heading .button{margin-top:14px}.summary-grid{grid-template-columns:1fr!important;gap:10px!important}.summary-card{padding:17px!important}.summary-value{font-size:24px!important}.wallet-overview{grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.wallet-card{padding:16px;min-height:145px;border-radius:18px}.wallet-card strong{font-size:20px}.wallet-card p{margin-top:15px}.wallet-card-foot{font-size:10px}.insights-grid{grid-template-columns:1fr!important;gap:12px!important}.panel{padding:16px!important;border-radius:18px}.panel-heading h2{font-size:16px}.chart-month{font-size:10px}.quick-panel{display:block;padding:18px!important}.quick-actions{margin-top:14px}.quick-actions .button{flex:1;justify-content:center}.form-page-panel form{display:block}.form-page-panel{max-width:none}.transaction-tools{display:block!important}.filter-tabs{margin-bottom:10px}.search-box{width:100%!important}.table-wrap{overflow-x:auto}.table-wrap table{min-width:620px}.export-panel{padding:22px!important}.wallet-page-cards{grid-template-columns:1fr 1fr}.app-update-panel{margin-top:12px}.page-footer{display:block;text-align:center;line-height:1.8;padding:12px 0}.mobile-nav{position:fixed;z-index:30;display:flex;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));padding:8px 5px;background:rgba(255,255,255,.94);border:1px solid #e6ebe6;border-radius:20px;box-shadow:0 12px 40px rgba(17,42,29,.14);backdrop-filter:blur(18px);justify-content:space-around}.mobile-nav-item{border:0;background:none;color:#77837b;font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 7px;min-width:52px}.mobile-nav-item span{font-size:18px;line-height:1.1}.mobile-nav-item.active{color:#184b35}.mobile-nav-item.add-mobile span{display:grid;place-items:center;background:linear-gradient(135deg,#174c37,#347451);color:white;border-radius:13px;width:33px;height:30px;box-shadow:0 5px 12px #174c3730}.mobile-nav-item.add-mobile{color:#24543c}.app-page{min-height:60vh}.form-page-panel .type-switch{margin-bottom:15px}.app-update-heading{gap:14px}.app-update-actions{flex-wrap:wrap}.app-update-actions .button{flex:1;justify-content:center}}
 @media(prefers-reduced-motion:reduce){.app-page,.wallet-card,.summary-card,.button-primary{animation:none!important;transition:none!important}}
+
+
+/* DuitKu 1.2.0 — clear actions, corrected mobile transaction grid, refined motion */
+.brand-mark {display:block!important;width:38px!important;height:38px!important;flex:0 0 38px;object-fit:cover;border:1px solid rgba(255,255,255,.75);border-radius:12px!important;padding:0!important;background:transparent!important;box-shadow:0 8px 20px rgba(18,54,38,.16)!important}
+.action-heading{text-align:right}
+.delete-button{display:inline-flex;min-height:31px;align-items:center;justify-content:center;gap:6px;padding:6px 10px;border:1px solid rgba(190,89,78,.17);border-radius:9px;background:#fff7f5;color:#b65d53;font-size:10px;font-weight:750;white-space:nowrap;cursor:pointer;transition:transform .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.delete-button svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.delete-button:hover{transform:translateY(-1px);border-color:rgba(190,89,78,.3);background:#ffefec;box-shadow:0 5px 13px rgba(190,89,78,.10)}
+.delete-button:active{transform:scale(.96)}
+.delete-button:focus-visible{outline:3px solid rgba(190,89,78,.22);outline-offset:2px}
+.app-toast{position:fixed;z-index:80;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));max-width:min(92vw,440px);padding:12px 17px;border:1px solid rgba(232,239,233,.9);border-radius:14px;background:rgba(20,57,42,.96);box-shadow:0 16px 36px rgba(11,35,24,.22);color:#fff;font-size:12px;font-weight:650;line-height:1.5;text-align:center;opacity:0;pointer-events:none;transform:translate(-50%,14px) scale(.97);transition:opacity .24s ease,transform .28s cubic-bezier(.2,.75,.25,1);backdrop-filter:blur(14px)}
+.app-toast.visible{opacity:1;transform:translate(-50%,0) scale(1)}
+.app-toast.is-error{background:rgba(133,54,48,.97);border-color:rgba(255,255,255,.2)}
+@keyframes walletGleam{0%,62%,100%{transform:translateX(-145%) skewX(-22deg);opacity:0}69%{opacity:.7}85%{transform:translateX(360%) skewX(-22deg);opacity:0}}
+@keyframes pageFocusIn{from{opacity:0;transform:translate3d(0,13px,0) scale(.995);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+.app-page.active{animation:pageFocusIn .48s cubic-bezier(.2,.75,.25,1) both}
+.wallet-card{isolation:isolate}
+.wallet-card::before{content:"";position:absolute;z-index:0;top:-30%;bottom:-30%;left:-55%;width:38%;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:translateX(-145%) skewX(-22deg);animation:walletGleam 8.5s ease-in-out infinite}
+.wallet-card>*{position:relative;z-index:1}
+.wallet-card-top .wallet-chip{transition:transform .35s cubic-bezier(.2,.75,.25,1),background .35s ease}
+.wallet-card:hover .wallet-chip{transform:rotate(-7deg) scale(1.06);background:rgba(255,255,255,.2)}
+.mobile-nav-item{transition:color .22s ease,transform .22s ease}
+.mobile-nav-item:active{transform:translateY(2px) scale(.96)}
+.mobile-nav-item.add-mobile span{transition:transform .25s cubic-bezier(.2,.75,.25,1),box-shadow .25s ease}
+.mobile-nav-item.add-mobile:active span{transform:rotate(90deg) scale(.94)}
+.button{transition:transform .22s ease,box-shadow .22s ease,background .22s ease}
+.button:active{transform:translateY(1px) scale(.985)}
+.panel{transition:transform .32s cubic-bezier(.2,.75,.25,1),box-shadow .32s ease}
+@media(hover:hover) and (pointer:fine){.panel:hover{box-shadow:0 20px 48px rgba(18,48,35,.09)}}
+@media(max-width:760px){
+  tbody tr{grid-template-columns:minmax(0,1fr) auto 72px;grid-template-areas:"name amount action" "category wallet date"}
+  tbody td:nth-child(2){grid-area:category;justify-self:start}
+  tbody td:nth-child(3){grid-area:wallet;justify-self:start;color:inherit;font-size:9px}
+  tbody td:nth-child(4){grid-area:date;justify-self:end;color:#9aa49c;font-size:9px}
+  tbody td:nth-child(5){grid-area:amount;justify-self:end;font-size:11px;white-space:nowrap}
+  tbody td:nth-child(6){grid-area:action;justify-self:end}
+  .delete-button{display:inline-flex;width:68px;height:30px;min-height:30px;padding:0 8px}
+  .delete-button svg{width:13px;height:13px}
+  .wallet-pill{padding:4px 7px;font-size:9px}
+  .app-toast{bottom:calc(86px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){
+  .app-page.active,.wallet-card::before{animation:none!important}
+  .app-toast,.delete-button,.mobile-nav-item,.button,.panel,.wallet-card-top .wallet-chip{transition:none!important}
+}

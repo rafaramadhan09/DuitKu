@@ -10,9 +10,10 @@ Aplikasi pencatat keuangan pribadi untuk membantu mengelola pemasukan, pengeluar
 - Menampilkan ringkasan pemasukan dan pengeluaran bulan berjalan.
 - Menampilkan grafik arus kas enam bulan terakhir.
 - Melihat, mencari, dan memfilter transaksi.
-- Menghapus transaksi.
+- Menghapus transaksi dengan konfirmasi; saldo dan ringkasan dihitung ulang otomatis.
 - Memisahkan saldo cash dan m-banking/e-wallet.
-- Navigasi per halaman, optimasi tampilan mobile, dan animasi transisi.
+- Navigasi per halaman, optimasi tampilan mobile, tombol hapus yang jelas, dan animasi transisi premium.
+- Identitas visual monogram DK yang menyambung pada ikon aplikasi dan launcher Android.
 - Mengekspor transaksi dan ringkasan dompet ke workbook Excel (.xls).
 
 ## Menjalankan aplikasi
@@ -25,7 +26,7 @@ Aplikasi menggunakan HTML, CSS, dan JavaScript tanpa dependensi tambahan.
 
 ## Penyimpanan data
 
-Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan. Versi ini belum menggunakan akun, server, atau sinkronisasi antarperangkat. Ekspor CSV secara berkala untuk membuat cadangan.
+Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan. Versi ini belum menggunakan akun, server, atau sinkronisasi antarperangkat. Ekspor laporan Excel (.xls) secara berkala untuk membuat cadangan.
 
 ## Struktur file
 
@@ -51,10 +52,10 @@ Repository ini juga menyiapkan build Android menggunakan Capacitor 8.
 1. Buka tab **Actions** di GitHub.
 2. Pilih workflow **Build & Release DuitKu Android**.
 3. Klik **Run workflow**.
-4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.0.0`. Kosongkan input tersebut untuk hanya membuat artifact APK.
+4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.2.0`. Kosongkan input tersebut untuk hanya membuat artifact APK.
 5. Setelah workflow berhasil, unduh APK dari GitHub Release atau artifact `DuitKu-debug-apk`.
 
-Versi aplikasi mengikuti Semantic Versioning, mulai dari **DuitKu 1.0.0**. Pemeriksa pembaruan di dalam aplikasi hanya menawarkan GitHub Release stabil, bukan prerelease.
+Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.2.0**. Pemeriksa pembaruan di dalam aplikasi hanya menawarkan GitHub Release stabil, bukan prerelease.
 
 **Catatan distribusi:** workflow saat ini menghasilkan APK debug agar mudah diuji. Ini belum merupakan paket produksi bertanda tangan permanen untuk Play Store. Untuk pembaruan langsung tanpa uninstall, semua APK harus ditandatangani dengan keystore yang sama. Simpan keystore dan password di GitHub Actions Secrets, jangan commit ke repository.
 
