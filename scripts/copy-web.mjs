@@ -7,6 +7,7 @@ const webFiles = [
   "index.html",
   "styles.css",
   "app.js",
+  "app-bootstrap.js",
   "manifest.webmanifest",
   "icon.svg",
   "service-worker.js"
