@@ -387,6 +387,7 @@
     var type = selectedType();
     var category = String(data.get("category") || "");
     var note = String(data.get("note") || "").trim();
+    var wallet = String(data.get("wallet") || "bank");
 
     if (!name || !Number.isFinite(amount) || amount <= 0 || !date || categories[type].indexOf(category) === -1) {
       showFeedback("Periksa kembali nama, jumlah, tanggal, dan kategori.", true);
