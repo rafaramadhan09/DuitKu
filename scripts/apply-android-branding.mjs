@@ -89,3 +89,20 @@ await Promise.all([
 ]);
 
 console.log("Applied connected DK launcher icon (legacy vector, adaptive, and monochrome).");
+
+const packageDir = path.join(androidRoot, "java", "com", "rafaramadhan09", "duitku");
+await mkdir(packageDir, { recursive: true });
+const activitySource = "package com.rafaramadhan09.duitku;\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DuitKuExportPlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n";
+await writeFile(path.join(packageDir, "MainActivity.java"), activitySource, "utf8");
+const exportPluginSource = "package com.rafaramadhan09.duitku;\n\nimport android.content.Intent;\nimport android.net.Uri;\nimport androidx.core.content.FileProvider;\nimport com.getcapacitor.Plugin;\nimport com.getcapacitor.PluginCall;\nimport com.getcapacitor.PluginMethod;\nimport com.getcapacitor.annotation.CapacitorPlugin;\nimport java.io.File;\nimport java.io.FileOutputStream;\nimport java.nio.charset.StandardCharsets;\n\n@CapacitorPlugin(name = \"DuitKuExport\")\npublic class DuitKuExportPlugin extends Plugin {\n    @PluginMethod\n    public void shareSpreadsheet(PluginCall call) {\n        String requestedName = call.getString(\"fileName\");\n        String content = call.getString(\"content\");\n        if (content == null || content.isEmpty()) {\n            call.reject(\"Isi laporan Excel kosong.\");\n            return;\n        }\n        String safeName = requestedName == null ? \"DuitKu-Laporan.xls\" :\n            requestedName.replaceAll(\"[^A-Za-z0-9._-]\", \"_\");\n        if (!safeName.toLowerCase().endsWith(\".xls\")) safeName += \".xls\";\n\n        try {\n            File file = new File(getContext().getCacheDir(), safeName);\n            try (FileOutputStream output = new FileOutputStream(file)) {\n                output.write(content.getBytes(StandardCharsets.UTF_8));\n                output.flush();\n            }\n            Uri uri = FileProvider.getUriForFile(\n                getContext(),\n                getContext().getPackageName() + \".fileprovider\",\n                file\n            );\n            Intent send = new Intent(Intent.ACTION_SEND);\n            send.setType(\"application/vnd.ms-excel\");\n            send.putExtra(Intent.EXTRA_STREAM, uri);\n            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);\n            getActivity().startActivity(Intent.createChooser(send, \"Simpan atau bagikan laporan DuitKu\"));\n            call.resolve();\n        } catch (Exception error) {\n            call.reject(\"Gagal menyiapkan file Excel: \" + error.getMessage(), error);\n        }\n    }\n}\n";
+await writeFile(path.join(packageDir, "DuitKuExportPlugin.java"), exportPluginSource, "utf8");
+const xmlDir = path.join(resources, "xml");
+await mkdir(xmlDir, { recursive: true });
+await writeFile(path.join(xmlDir, "duitku_file_paths.xml"), "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<paths xmlns:android=\"http://schemas.android.com/apk/res/android\">\n    <cache-path name=\"duitku_exports\" path=\".\" />\n</paths>\n", "utf8");
+let updatedManifest = await readFile(manifestPath, "utf8");
+if (!updatedManifest.includes('android:authorities="${applicationId}.fileprovider"')) {
+  const provider = "    <provider android:name=\"androidx.core.content.FileProvider\" android:authorities=\"${applicationId}.fileprovider\" android:exported=\"false\" android:grantUriPermissions=\"true\">\n        <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@xml/duitku_file_paths\" />\n    </provider>\n";
+  updatedManifest = updatedManifest.replace("</application>", provider + "</application>");
+  await writeFile(manifestPath, updatedManifest, "utf8");
+}
+console.log("Registered DuitKu native Excel sharing bridge.");
