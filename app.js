@@ -316,6 +316,14 @@
     renderTransactions();
   });
 
+  document.querySelectorAll(".side-nav .nav-link").forEach(function (link) {
+    link.addEventListener("click", function () {
+      document.querySelectorAll(".side-nav .nav-link").forEach(function (item) {
+        item.classList.toggle("active", item === link);
+      });
+    });
+  });
+
   transactionRows.addEventListener("click", function (event) {
     var button = event.target.closest("[data-delete]");
     if (!button) return;
