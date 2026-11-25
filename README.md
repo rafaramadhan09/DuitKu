@@ -37,7 +37,7 @@ DuitKu dilengkapi manifest dan service worker sehingga dapat dipasang dari brows
 
 ## Publikasi
 
-Workflow `.github/workflows/deploy-pages.yml` menyiapkan publikasi otomatis ke GitHub Pages setiap ada perubahan di branch `main`. Pastikan GitHub Pages menggunakan sumber **GitHub Actions** pada pengaturan repository.
+Workflow `.github/workflows/deploy-pages.yml` tersedia untuk publikasi melalui GitHub Actions. Untuk mengaktifkannya, buka **Settings → Pages** pada repository dan pilih **GitHub Actions** sebagai Build and deployment source. Setelah itu jalankan workflow **Deploy DuitKu to GitHub Pages** dari tab Actions.
 
 DuitKu adalah alat pencatatan sederhana, bukan layanan perbankan dan tidak terhubung ke rekening bank.
 
@@ -47,11 +47,12 @@ DuitKu adalah alat pencatatan sederhana, bukan layanan perbankan dan tidak terhu
 Repository ini juga menyiapkan build Android menggunakan Capacitor 8.
 
 1. Buka tab **Actions** di GitHub.
-2. Pilih workflow **Build DuitKu Android APK**.
-3. Jalankan workflow melalui **Run workflow**, atau tunggu build otomatis ketika file aplikasi berubah di `main`.
-4. Setelah workflow berhasil, buka hasil run dan unduh artifact `DuitKu-debug-apk`.
+2. Pilih workflow **Build & Release DuitKu Android**.
+3. Klik **Run workflow**.
+4. Untuk membuat GitHub prerelease, isi input `release_version`, misalnya `v0.1.0-beta.1`. Kosongkan input tersebut untuk hanya membuat artifact APK.
+5. Setelah workflow berhasil, unduh artifact `DuitKu-debug-apk` atau buka tab **Releases** untuk file APK yang dilampirkan.
 
-APK yang dihasilkan adalah APK debug untuk pengujian dan pemasangan manual. APK ini belum ditandatangani dengan kunci rilis untuk distribusi Play Store.
+GitHub prerelease yang dihasilkan menggunakan APK debug untuk pengujian manual. Ini bukan paket produksi untuk Play Store.
 
 ### Teknologi Android
 
@@ -59,3 +60,8 @@ APK yang dihasilkan adalah APK debug untuk pengujian dan pemasangan manual. APK 
 - Node.js 22
 - Java 21
 - Android SDK API 36
+
+
+### Rilis produksi / Google Play
+
+Untuk distribusi produksi, buat upload keystore pribadi, simpan ke GitHub Actions Secrets (jangan commit file keystore atau password ke repository), lalu tambahkan konfigurasi signing untuk build release. APK/AAB harus ditandatangani dengan kunci yang tepat; jaga backup keystore dan password secara aman.
