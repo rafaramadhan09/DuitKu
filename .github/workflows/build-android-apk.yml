@@ -83,10 +83,10 @@ jobs:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-release]')) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.0.0' || inputs.release_version }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.1.0' || inputs.release_version }}
         run: |
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Use a stable version such as v1.0.0"
+            echo "Use a stable version such as v1.1.0"
             exit 1
           fi
 
@@ -96,19 +96,19 @@ jobs:
           fi
 
           cat > release-notes.md <<'NOTES'
-          ## DuitKu 1.0.0
+          ## DuitKu 1.1.0
 
-          Rilis stabil pertama DuitKu untuk distribusi GitHub.
+          Pembaruan besar untuk pengelolaan keuangan harian.
 
-          - Tampilan premium yang responsif dengan animasi lembut pada dashboard, kartu, grafik, tombol, dan navigasi.
-          - Navigasi mobile dan pemeriksa pembaruan langsung di dalam aplikasi.
-          - Pencatatan pemasukan dan pengeluaran, ringkasan saldo, grafik arus kas, pencarian, filter, dan ekspor CSV.
-          - Data transaksi disimpan secara lokal di perangkat.
-          - Pemeriksa pembaruan hanya menawarkan rilis stabil terbaru dan menyediakan unduhan APK langsung.
-          - Android tetap meminta persetujuan pengguna saat memasang APK.
-          - Paket APK ini masih dibangun menggunakan varian debug, bukan paket produksi yang ditandatangani untuk Play Store.
-          - Agar pembaruan dapat menimpa instalasi lama, semua APK harus ditandatangani dengan keystore yang sama.
-          - Ekspor CSV sebelum mengganti APK untuk menjaga cadangan transaksi.
+          - Navigasi berbasis halaman: Ringkasan, Transaksi, Catat transaksi, Dompet, dan Laporan.
+          - Saldo dipisahkan antara M-Banking/digital dan Cash/tunai.
+          - Form transaksi memungkinkan pengguna memilih dompet sumber dana.
+          - Ekspor laporan Excel (.xls) berisi lembar transaksi dan ringkasan saldo.
+          - Identitas visual, logo, dan antarmuka diperbarui dengan gaya emerald premium.
+          - Data transaksi tetap disimpan secara lokal di perangkat; tidak ada sinkronisasi cloud.
+          - Paket Android ini dibangun menggunakan varian debug, bukan paket produksi Play Store.
+          - Agar pembaruan dapat menimpa instalasi lama, APK perlu ditandatangani dengan keystore yang sama.
+          - Cadangkan data transaksi sebelum mengganti instalasi apabila Android meminta pemasangan yang tidak mempertahankan data.
           NOTES
 
           gh release create "$RELEASE_VERSION" "android/app/build/outputs/apk/debug/app-debug.apk#DuitKu-$RELEASE_VERSION.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DuitKu $RELEASE_VERSION" --notes-file release-notes.md
