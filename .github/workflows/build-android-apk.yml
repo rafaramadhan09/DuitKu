@@ -83,7 +83,7 @@ jobs:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-beta]')) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v0.1.0-beta.1' || inputs.release_version }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v0.1.0-beta.2' || inputs.release_version }}
         run: |
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
             echo "Use a version such as v0.1.0-beta.1"
