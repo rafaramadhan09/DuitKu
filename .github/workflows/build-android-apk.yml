@@ -8,6 +8,7 @@ on:
       - "index.html"
       - "styles.css"
       - "app.js"
+      - "app-bootstrap.js"
       - "manifest.webmanifest"
       - "icon.svg"
       - "service-worker.js"
@@ -104,6 +105,12 @@ jobs:
           console.log("Date validation smoke tests passed.");
           NODE
 
+      - name: Restore stable Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: duitku-android-debug-signing-key-v1
+
       - name: Build debug APK
         working-directory: android
         run: |
@@ -114,10 +121,10 @@ jobs:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-release]')) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.2.0' || inputs.release_version }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.3.0' || inputs.release_version }}
         run: |
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Use a stable version such as v1.2.0"
+            echo "Use a stable version such as v1.3.0"
             exit 1
           fi
 
@@ -126,7 +133,10 @@ jobs:
 
           Polesan lanjutan untuk pencatatan keuangan yang lebih nyaman dan rapi.
 
-          - Tombol hapus transaksi dibuat lebih jelas dengan konfirmasi sebelum data dihapus.
+          - Penarikan M-Banking ke Cash dicatat sebagai transfer internal; total pemasukan/pengeluaran tidak berubah.
+          - Ekspor Excel Android menggunakan menu berbagi native untuk menyimpan atau membuka laporan.
+          - Pembaruan fitur dan tampilan web diterapkan langsung di dalam aplikasi saat online.
+          - Tombol hapus transaksi tetap memakai konfirmasi sebelum data dihapus.
           - Saldo total, cash, m-banking, grafik, dan ringkasan otomatis dihitung ulang setelah transaksi dihapus.
           - Perbaikan tata letak kolom transaksi pada layar HP.
           - Pemeriksaan data tersimpan dan validasi jumlah/tanggal yang lebih ketat.
@@ -134,7 +144,7 @@ jobs:
           - Animasi halaman, kartu dompet, tombol, navigasi, dan notifikasi dipoles dengan tetap menghormati pengaturan reduced motion.
           - Data transaksi tetap disimpan secara lokal di perangkat; tidak ada sinkronisasi cloud.
           - APK Android masih menggunakan varian debug, bukan paket produksi Play Store.
-          - Semua APK untuk pembaruan di tempat harus menggunakan keystore penandatanganan yang sama.
+          - Kunci debug disimpan pada cache GitHub Actions agar build selanjutnya memakai sertifikat yang sama.
           - Cadangkan transaksi melalui Excel sebelum mengganti instalasi jika Android meminta pemasangan yang tidak mempertahankan data.
           NOTES
 
