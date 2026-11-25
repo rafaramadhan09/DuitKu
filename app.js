@@ -255,6 +255,123 @@
     renderTransactions();
   }
 
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "0.1.0-beta.3";
+  var updateCheckButton = document.getElementById("checkUpdateButton");
+  var updateDownloadButton = document.getElementById("downloadUpdateButton");
+  var updateStatus = document.getElementById("updateStatus");
+  var updateNotes = document.getElementById("updateNotes");
+
+  function parseVersion(value) {
+    var match = String(value || "").trim().replace(/^v/i, "")
+      .match(/^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([0-9A-Za-z.-]+))?$/);
+    if (!match) return null;
+    return {
+      core: [Number(match[1]), Number(match[2]), Number(match[3])],
+      prerelease: match[4] ? match[4].split(".") : null
+    };
+  }
+
+  function compareVersions(left, right) {
+    var a = parseVersion(left);
+    var b = parseVersion(right);
+    if (!a || !b) return String(left).localeCompare(String(right));
+    for (var i = 0; i < 3; i++) {
+      if (a.core[i] !== b.core[i]) return a.core[i] > b.core[i] ? 1 : -1;
+    }
+    if (a.prerelease === null && b.prerelease === null) return 0;
+    if (a.prerelease === null) return 1;
+    if (b.prerelease === null) return -1;
+    var length = Math.max(a.prerelease.length, b.prerelease.length);
+    for (var j = 0; j < length; j++) {
+      if (a.prerelease[j] === undefined) return -1;
+      if (b.prerelease[j] === undefined) return 1;
+      if (a.prerelease[j] === b.prerelease[j]) continue;
+      var aNumeric = /^\\d+$/.test(a.prerelease[j]);
+      var bNumeric = /^\\d+$/.test(b.prerelease[j]);
+      if (aNumeric && bNumeric) {
+        return Number(a.prerelease[j]) > Number(b.prerelease[j]) ? 1 : -1;
+      }
+      if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
+      return a.prerelease[j] > b.prerelease[j] ? 1 : -1;
+    }
+    return 0;
+  }
+
+  async function checkForAppUpdate(silent) {
+    if (!updateCheckButton || !updateStatus || !updateDownloadButton) return;
+    updateCheckButton.disabled = true;
+    var originalLabel = updateCheckButton.textContent;
+    updateCheckButton.textContent = "Memeriksa...";
+    updateDownloadButton.hidden = true;
+    updateNotes.hidden = true;
+    if (!silent) updateStatus.textContent = "Sedang memeriksa versi DuitKu terbaru...";
+
+    try {
+      var response = await fetch(
+        "https://api.github.com/repos/rafaramadhan09/DuitKu/releases?per_page=30",
+        {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+          }
+        }
+      );
+      if (!response.ok) {
+        throw new Error(response.status === 403
+          ? "GitHub sedang membatasi permintaan. Coba periksa lagi nanti."
+          : "Belum bisa menghubungi server pembaruan (HTTP " + response.status + ").");
+      }
+
+      var releases = await response.json();
+      var candidates = releases.filter(function (release) {
+        return release && !release.draft && Array.isArray(release.assets) &&
+          release.assets.some(function (asset) { return /\\.apk$/i.test(asset.name || ""); });
+      });
+      candidates.sort(function (a, b) {
+        return compareVersions(b.tag_name, a.tag_name);
+      });
+
+      if (!candidates.length) {
+        updateStatus.textContent = "Belum ada paket pembaruan yang tersedia.";
+        return;
+      }
+
+      var latest = candidates[0];
+      if (compareVersions(latest.tag_name, installedVersion) <= 0) {
+        updateStatus.textContent = "DuitKu sudah versi terbaru (" + installedVersion + ").";
+        return;
+      }
+
+      var apk = latest.assets.find(function (asset) {
+        return /\\.apk$/i.test(asset.name || "");
+      });
+      if (!apk || !apk.browser_download_url) {
+        updateStatus.textContent = "Versi " + latest.tag_name + " tersedia, tetapi file APK belum ditemukan.";
+        return;
+      }
+
+      updateStatus.textContent = "Pembaruan tersedia: " + latest.tag_name + ". Unduh untuk mendapatkan versi terbaru.";
+      updateDownloadButton.href = apk.browser_download_url;
+      updateDownloadButton.setAttribute("download", "DuitKu-" + latest.tag_name + ".apk");
+      updateDownloadButton.hidden = false;
+
+      var notes = String(latest.body || "").trim();
+      if (notes) {
+        updateNotes.textContent = notes.length > 900 ? notes.slice(0, 900) + "..." : notes;
+        updateNotes.hidden = false;
+      }
+    } catch (error) {
+      updateStatus.textContent = error && error.message
+        ? error.message
+        : "Tidak dapat memeriksa pembaruan. Periksa koneksi internet lalu coba lagi.";
+    } finally {
+      updateCheckButton.disabled = false;
+      updateCheckButton.textContent = originalLabel;
+    }
+  }
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     var data = new FormData(form);
@@ -315,6 +432,12 @@
     searchTerm = searchInput.value.trim().toLowerCase();
     renderTransactions();
   });
+
+  if (updateCheckButton) {
+    updateCheckButton.addEventListener("click", function () {
+      checkForAppUpdate(false);
+    });
+  }
 
   document.querySelectorAll(".side-nav .nav-link").forEach(function (link) {
     link.addEventListener("click", function () {
@@ -384,6 +507,12 @@
 
   updateCategoryOptions();
   renderAll();
+
+  if (updateCheckButton && navigator.onLine) {
+    window.addEventListener("load", function () {
+      checkForAppUpdate(true);
+    });
+  }
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
