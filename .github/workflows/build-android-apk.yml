@@ -86,7 +86,7 @@ jobs:
           const vm = require("node:vm");
           const source = fs.readFileSync("app.js", "utf8");
           const start = source.indexOf("  function isValidDateString(value) {");
-          const close = source.indexOf("\\n  }", start);
+          const close = source.indexOf(String.fromCharCode(10) + "  }", start);
           if (start < 0 || close < 0) throw new Error("Date validation helper missing");
           const helper = source.slice(start, close + 4);
           function localDateString(date) {
