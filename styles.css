@@ -1101,3 +1101,5 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
 .transfer-form .submit-button{margin-top:8px}
 .transfer-amount{color:#557e6c!important;font-weight:750}
 @media(max-width:760px){.transfer-route{margin:14px 0}}
+
+.transaction-symbol.transfer{color:#5d7d6c;background:rgba(80,128,101,.12)}
