@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "DuitKu - Pencatat Keuangan",
+  "short_name": "DuitKu",
+  "description": "Catat pemasukan, pengeluaran, dan pantau saldo keuangan pribadi.",
+  "lang": "id-ID",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7f5",
+  "theme_color": "#1c8b5c",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
