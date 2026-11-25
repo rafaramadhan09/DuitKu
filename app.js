@@ -508,6 +508,14 @@
   updateCategoryOptions();
   renderAll();
 
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(function () {
+      document.documentElement.classList.add("ui-ready");
+    });
+  } else {
+    document.documentElement.classList.add("ui-ready");
+  }
+
   if (updateCheckButton && navigator.onLine) {
     window.addEventListener("load", function () {
       checkForAppUpdate(true);
