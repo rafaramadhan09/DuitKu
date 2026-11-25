@@ -285,7 +285,7 @@
         : (item.wallet === "cash" ? "Cash" : "M-Banking");
       var typeLabel = transfer ? "Transfer" : (income ? "Pemasukan" : "Pengeluaran");
       return '<tr>' +
-        '<td><div class="transaction-name"><span class="transaction-symbol ' + (income ? "income" : "expense") + '">' +
+        '<td><div class="transaction-name"><span class="transaction-symbol ' + (income ? "income" : (transfer ? "transfer" : "expense")) + '">' +
         escapeHTML(icon) + '</span><span>' + escapeHTML(item.name) + note + '</span></div></td>' +
         '<td><span class="category-pill">' + escapeHTML(transfer ? typeLabel : item.category) + '</span></td>' +
         '<td><span class="wallet-pill">' + walletName + '</span></td>' +
