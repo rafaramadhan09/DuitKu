@@ -89,7 +89,7 @@
             (item.fromWallet === "bank" || item.fromWallet === "cash") &&
             (item.toWallet === "bank" || item.toWallet === "cash") &&
             item.fromWallet !== item.toWallet
-          ))
+          )) &&
           typeof item.name === "string" && item.name.trim().length > 0 &&
           Number.isSafeInteger(Number(item.amount)) && Number(item.amount) > 0 &&
           isValidDateString(item.date) &&
@@ -644,6 +644,8 @@
   }).format(new Date());
   document.getElementById("yearLabel").textContent = String(new Date().getFullYear());
   document.getElementById("transactionDate").value = localDateString();
+  var transferDateInput = document.getElementById("transferDate");
+  if (transferDateInput) transferDateInput.value = localDateString();
 
   updateCategoryOptions();
   renderAll();
