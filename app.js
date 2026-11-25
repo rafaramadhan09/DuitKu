@@ -84,7 +84,12 @@
       if (!Array.isArray(parsed)) return [];
       return parsed.filter(function (item) {
         return item && typeof item.id === "string" && item.id.length > 0 &&
-          (item.type === "income" || item.type === "expense") &&
+          (item.type === "income" || item.type === "expense" || item.type === "transfer") &&
+          (item.type !== "transfer" || (
+            (item.fromWallet === "bank" || item.fromWallet === "cash") &&
+            (item.toWallet === "bank" || item.toWallet === "cash") &&
+            item.fromWallet !== item.toWallet
+          )) &&
           typeof item.name === "string" && item.name.trim().length > 0 &&
           Number.isSafeInteger(Number(item.amount)) && Number(item.amount) > 0 &&
           isValidDateString(item.date) &&
@@ -92,6 +97,11 @@
       }).map(function (item) {
         item.amount = Number(item.amount);
         item.wallet = item.wallet === "cash" ? "cash" : "bank";
+        if (item.type === "transfer") {
+          item.fromWallet = item.fromWallet === "cash" ? "cash" : "bank";
+          item.toWallet = item.toWallet === "cash" ? "cash" : "bank";
+          item.wallet = item.fromWallet;
+        }
         item.note = typeof item.note === "string" ? item.note : "";
         return item;
       });
@@ -151,12 +161,26 @@
 
   function totalsForMonth(key) {
     return transactions.reduce(function (totals, item) {
-      if (monthKey(item.date) === key) totals[item.type] += Number(item.amount);
+      if (item.type !== "transfer" && monthKey(item.date) === key) totals[item.type] += Number(item.amount);
       return totals;
     }, { income: 0, expense: 0 });
   }
 
-  function walletBalances() { return transactions.reduce(function(t,item){var w=item.wallet==="cash"?"cash":"bank";t[w]+=item.type==="income"?Number(item.amount):-Number(item.amount);return t;},{bank:0,cash:0}); }
+  function walletBalances() {
+    return transactions.reduce(function (totals, item) {
+      var amount = Number(item.amount) || 0;
+      if (item.type === "transfer") {
+        var from = item.fromWallet === "cash" ? "cash" : "bank";
+        var to = item.toWallet === "cash" ? "cash" : "bank";
+        totals[from] -= amount;
+        totals[to] += amount;
+      } else {
+        var wallet = item.wallet === "cash" ? "cash" : "bank";
+        totals[wallet] += item.type === "income" ? amount : -amount;
+      }
+      return totals;
+    }, { bank: 0, cash: 0 });
+  }
 
   function renderSummary() {
     var totals = totalsForMonth(monthKey(localDateString()));
@@ -164,7 +188,7 @@
     var allExpense = 0;
     transactions.forEach(function (item) {
       if (item.type === "income") allIncome += Number(item.amount);
-      else allExpense += Number(item.amount);
+      else if (item.type === "expense") allExpense += Number(item.amount);
     });
 
     document.getElementById("balanceValue").textContent = money(allIncome - allExpense);
@@ -253,17 +277,21 @@
 
     transactionRows.innerHTML = filtered.map(function (item) {
       var income = item.type === "income";
-      var icon = icons[item.category] || "•";
+      var transfer = item.type === "transfer";
+      var icon = transfer ? "⇄" : (icons[item.category] || "•");
       var note = item.note ? '<span class="transaction-note">' + escapeHTML(item.note) + '</span>' : "";
-      var walletName = item.wallet === "cash" ? "Cash" : "M-Banking";
+      var walletName = transfer
+        ? (item.fromWallet === "cash" ? "Cash" : "M-Banking") + " → " + (item.toWallet === "cash" ? "Cash" : "M-Banking")
+        : (item.wallet === "cash" ? "Cash" : "M-Banking");
+      var typeLabel = transfer ? "Transfer" : (income ? "Pemasukan" : "Pengeluaran");
       return '<tr>' +
-        '<td><div class="transaction-name"><span class="transaction-symbol ' + (income ? "income" : "expense") + '">' +
+        '<td><div class="transaction-name"><span class="transaction-symbol ' + (income ? "income" : (transfer ? "transfer" : "expense")) + '">' +
         escapeHTML(icon) + '</span><span>' + escapeHTML(item.name) + note + '</span></div></td>' +
-        '<td><span class="category-pill">' + escapeHTML(item.category) + '</span></td>' +
+        '<td><span class="category-pill">' + escapeHTML(transfer ? typeLabel : item.category) + '</span></td>' +
         '<td><span class="wallet-pill">' + walletName + '</span></td>' +
         '<td>' + escapeHTML(formatDate(item.date)) + '</td>' +
-        '<td class="amount-cell ' + (income ? "" : "negative") + '">' + (income ? "+" : "−") +
-        escapeHTML(money(item.amount)) + '</td>' +
+        '<td class="amount-cell ' + (transfer ? "transfer-amount" : (income ? "" : "negative")) + '">' +
+        (transfer ? "⇄ " : (income ? "+" : "−")) + escapeHTML(money(item.amount)) + '</td>' +
         '<td><button class="delete-button" type="button" data-delete="' + escapeHTML(item.id) +
         '" aria-label="Hapus transaksi ' + escapeHTML(item.name) + '" title="Hapus transaksi">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6"/></svg><span>Hapus</span></button></td>' +
@@ -288,11 +316,13 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.2.0";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.3.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
-  var updateDownloadButton = document.getElementById("downloadUpdateButton");
+  var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
   var updateNotes = document.getElementById("updateNotes");
+  var installedVersionLabel = document.getElementById("installedVersion");
+  if (installedVersionLabel) installedVersionLabel.textContent = "v" + installedVersion;
 
   function parseVersion(value) {
     var match = String(value || "").trim().replace(/^v/i, "")
@@ -331,74 +361,40 @@
   }
 
   async function checkForAppUpdate(silent) {
-    if (!updateCheckButton || !updateStatus || !updateDownloadButton) return;
+    if (!updateCheckButton || !updateStatus || !updateApplyButton) return;
     updateCheckButton.disabled = true;
     var originalLabel = updateCheckButton.textContent;
     updateCheckButton.textContent = "Memeriksa...";
-    updateDownloadButton.hidden = true;
+    updateApplyButton.hidden = true;
     updateNotes.hidden = true;
-    if (!silent) updateStatus.textContent = "Sedang memeriksa versi DuitKu terbaru...";
+    if (!silent) updateStatus.textContent = "Memeriksa pembaruan fitur DuitKu...";
 
     try {
       var response = await fetch(
-        "https://api.github.com/repos/rafaramadhan09/DuitKu/releases?per_page=30",
-        {
-          method: "GET",
-          cache: "no-store",
-          headers: {
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
-          }
-        }
+        "https://raw.githubusercontent.com/rafaramadhan09/DuitKu/main/index.html?check=" + Date.now(),
+        { method: "GET", cache: "no-store" }
       );
-      if (!response.ok) {
-        throw new Error(response.status === 403
-          ? "GitHub sedang membatasi permintaan. Coba periksa lagi nanti."
-          : "Belum bisa menghubungi server pembaruan (HTTP " + response.status + ").");
-      }
+      if (!response.ok) throw new Error("Server pembaruan belum dapat dijangkau (HTTP " + response.status + ").");
+      var html = await response.text();
+      var remoteDocument = new DOMParser().parseFromString(html, "text/html");
+      var remoteMeta = remoteDocument.querySelector('meta[name="duitku-version"]');
+      var latestVersion = remoteMeta ? remoteMeta.content : "";
+      if (!parseVersion(latestVersion)) throw new Error("Informasi versi pembaruan tidak valid.");
 
-      var releases = await response.json();
-      var candidates = releases.filter(function (release) {
-        return release && !release.draft && !release.prerelease && Array.isArray(release.assets) &&
-          release.assets.some(function (asset) { return /\.apk$/i.test(asset.name || ""); });
-      });
-      candidates.sort(function (a, b) {
-        return compareVersions(b.tag_name, a.tag_name);
-      });
-
-      if (!candidates.length) {
-        updateStatus.textContent = "Belum ada paket pembaruan yang tersedia.";
+      if (compareVersions(latestVersion, installedVersion) <= 0) {
+        updateStatus.textContent = "DuitKu sudah menggunakan fitur terbaru (v" + installedVersion + ").";
         return;
       }
 
-      var latest = candidates[0];
-      if (compareVersions(latest.tag_name, installedVersion) <= 0) {
-        updateStatus.textContent = "DuitKu sudah versi terbaru (" + installedVersion + ").";
-        return;
-      }
-
-      var apk = latest.assets.find(function (asset) {
-        return /\.apk$/i.test(asset.name || "");
-      });
-      if (!apk || !apk.browser_download_url) {
-        updateStatus.textContent = "Versi " + latest.tag_name + " tersedia, tetapi file APK belum ditemukan.";
-        return;
-      }
-
-      updateStatus.textContent = "Pembaruan tersedia: " + latest.tag_name + ". Unduh untuk mendapatkan versi terbaru.";
-      updateDownloadButton.href = apk.browser_download_url;
-      updateDownloadButton.setAttribute("download", "DuitKu-" + latest.tag_name + ".apk");
-      updateDownloadButton.hidden = false;
-
-      var notes = String(latest.body || "").trim();
-      if (notes) {
-        updateNotes.textContent = notes.length > 900 ? notes.slice(0, 900) + "..." : notes;
-        updateNotes.hidden = false;
-      }
+      updateStatus.textContent = "Pembaruan fitur tersedia: v" + latestVersion + ".";
+      updateApplyButton.textContent = "Perbarui sekarang ↻";
+      updateApplyButton.hidden = false;
+      updateNotes.textContent = "Fitur dan tampilan akan diterapkan langsung di dalam aplikasi. Tidak perlu memasang APK untuk pembaruan web.";
+      updateNotes.hidden = false;
     } catch (error) {
       updateStatus.textContent = error && error.message
         ? error.message
-        : "Tidak dapat memeriksa pembaruan. Periksa koneksi internet lalu coba lagi.";
+        : "Tidak dapat memeriksa pembaruan. Periksa koneksi internet.";
     } finally {
       updateCheckButton.disabled = false;
       updateCheckButton.textContent = originalLabel;
@@ -475,6 +471,56 @@
       checkForAppUpdate(false);
     });
   }
+  if (updateApplyButton) {
+    updateApplyButton.addEventListener("click", function () {
+      updateApplyButton.disabled = true;
+      updateApplyButton.textContent = "Menerapkan pembaruan...";
+      window.location.reload();
+    });
+  }
+
+  var transferForm = document.getElementById("transferForm");
+  if (transferForm) {
+    transferForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var amount = Number(document.getElementById("transferAmount").value);
+      var date = String(document.getElementById("transferDate").value || "");
+      var note = String(document.getElementById("transferNote").value || "").trim();
+      var balances = walletBalances();
+      if (!Number.isSafeInteger(amount) || amount <= 0 || !isValidDateString(date)) {
+        showToast("Masukkan jumlah dan tanggal penarikan yang valid.", true);
+        return;
+      }
+      if (amount > balances.bank) {
+        showToast("Saldo M-Banking tidak cukup untuk penarikan ini.", true);
+        return;
+      }
+      if (!window.confirm("Tarik " + money(amount) + " dari M-Banking ke Cash? Saldo kedua dompet akan diperbarui.")) return;
+      var transfer = {
+        id: (window.crypto && window.crypto.randomUUID)
+          ? window.crypto.randomUUID()
+          : String(Date.now()) + "-transfer-" + Math.random().toString(16).slice(2),
+        type: "transfer",
+        name: "Tarik tunai",
+        amount: amount,
+        category: "Transfer",
+        wallet: "bank",
+        fromWallet: "bank",
+        toWallet: "cash",
+        date: date,
+        note: note
+      };
+      transactions.push(transfer);
+      if (!saveTransactions()) {
+        transactions.pop();
+        return;
+      }
+      transferForm.reset();
+      document.getElementById("transferDate").value = localDateString();
+      renderAll();
+      showToast("Penarikan berhasil. Saldo Cash bertambah dan M-Banking berkurang.");
+    });
+  }
 
   function switchPage(page) {
     if (!document.querySelector('[data-page-panel="' + page + '"]')) page = "home";
@@ -507,24 +553,90 @@
     showToast("Transaksi dihapus. Saldo dompet sudah diperbarui.");
   });
 
-  document.getElementById("exportButton").addEventListener("click", function () {
-    if (!transactions.length) { var fb=document.getElementById("exportFeedback"); if(fb) fb.textContent="Belum ada transaksi untuk diekspor."; showFeedback("Belum ada transaksi untuk diekspor.", true); return; }
-    function xml(v) { return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-    function cell(v,type) { return "<Cell><Data ss:Type=\"" + (type || "String") + "\">" + xml(v) + "</Data></Cell>"; }
-    var sorted=transactions.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
-    var rows="<Row>"+["Tanggal","Jenis","Nama transaksi","Kategori","Dompet","Jumlah (IDR)","Catatan"].map(function(x){return cell(x);}).join("")+"</Row>";
-    sorted.forEach(function(item){rows+="<Row>"+[item.date,item.type==="income"?"Pemasukan":"Pengeluaran",item.name,item.category,item.wallet==="cash"?"Cash":"M-Banking",Number(item.amount),item.note||""].map(function(x,i){return cell(x,i===5?"Number":"String");}).join("")+"</Row>";});
-    var totals=walletBalances();
-    var summary="<Row>"+cell("Ringkasan")+cell("Nilai")+"</Row>"+
-      "<Row>"+cell("Total Saldo")+cell(totals.bank+totals.cash,"Number")+"</Row>"+
-      "<Row>"+cell("Saldo M-Banking")+cell(totals.bank,"Number")+"</Row>"+
-      "<Row>"+cell("Saldo Cash")+cell(totals.cash,"Number")+"</Row>"+
-      "<Row>"+cell("Total Pemasukan")+cell(transactions.filter(function(x){return x.type==="income";}).reduce(function(s,x){return s+Number(x.amount);},0),"Number")+"</Row>"+
-      "<Row>"+cell("Total Pengeluaran")+cell(transactions.filter(function(x){return x.type==="expense";}).reduce(function(s,x){return s+Number(x.amount);},0),"Number")+"</Row>";
-    var book="<?xml version=\"1.0\"?><?mso-application progid=\"Excel.Sheet\"?><Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"><Worksheet ss:Name=\"Transaksi\"><Table>"+rows+"</Table></Worksheet><Worksheet ss:Name=\"Ringkasan\"><Table>"+summary+"</Table></Worksheet></Workbook>";
-    var blob=new Blob([book],{type:"application/vnd.ms-excel;charset=utf-8"});
-    var url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="DuitKu-Laporan-"+localDateString()+".xls";document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
-    var fb=document.getElementById("exportFeedback"); if(fb) fb.textContent="Excel berhasil diekspor. Lembar transaksi dan ringkasan saldo tersedia."; showFeedback("File Excel berhasil disiapkan.");
+  document.getElementById("exportButton").addEventListener("click", async function () {
+    var feedbackNode = document.getElementById("exportFeedback");
+    if (!transactions.length) {
+      if (feedbackNode) feedbackNode.textContent = "Belum ada transaksi untuk diekspor.";
+      showFeedback("Belum ada transaksi untuk diekspor.", true);
+      return;
+    }
+
+    function xml(value) {
+      return String(value == null ? "" : value).replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function cell(value, type) {
+      return "<Cell><Data ss:Type=\"" + (type || "String") + "\">" + xml(value) + "</Data></Cell>";
+    }
+
+    var sorted = transactions.slice().sort(function (a, b) { return a.date.localeCompare(b.date); });
+    var rows = "<Row>" + ["Tanggal", "Jenis", "Nama transaksi", "Kategori", "Dompet / Alur", "Jumlah (IDR)", "Catatan"]
+      .map(function (value) { return cell(value); }).join("") + "</Row>";
+    sorted.forEach(function (item) {
+      var transfer = item.type === "transfer";
+      var walletLabel = transfer
+        ? (item.fromWallet === "cash" ? "Cash" : "M-Banking") + " → " + (item.toWallet === "cash" ? "Cash" : "M-Banking")
+        : (item.wallet === "cash" ? "Cash" : "M-Banking");
+      var typeLabel = transfer ? "Transfer" : (item.type === "income" ? "Pemasukan" : "Pengeluaran");
+      rows += "<Row>" + [
+        item.date, typeLabel, item.name, item.category, walletLabel, Number(item.amount), item.note || ""
+      ].map(function (value, index) { return cell(value, index === 5 ? "Number" : "String"); }).join("") + "</Row>";
+    });
+
+    var balances = walletBalances();
+    var totalIncome = transactions.filter(function (item) { return item.type === "income"; })
+      .reduce(function (sum, item) { return sum + Number(item.amount); }, 0);
+    var totalExpense = transactions.filter(function (item) { return item.type === "expense"; })
+      .reduce(function (sum, item) { return sum + Number(item.amount); }, 0);
+    var totalTransfer = transactions.filter(function (item) { return item.type === "transfer"; })
+      .reduce(function (sum, item) { return sum + Number(item.amount); }, 0);
+    var summary = "<Row>" + cell("Ringkasan") + cell("Nilai") + "</Row>" +
+      "<Row>" + cell("Total Saldo") + cell(balances.bank + balances.cash, "Number") + "</Row>" +
+      "<Row>" + cell("Saldo M-Banking") + cell(balances.bank, "Number") + "</Row>" +
+      "<Row>" + cell("Saldo Cash") + cell(balances.cash, "Number") + "</Row>" +
+      "<Row>" + cell("Total Pemasukan") + cell(totalIncome, "Number") + "</Row>" +
+      "<Row>" + cell("Total Pengeluaran") + cell(totalExpense, "Number") + "</Row>" +
+      "<Row>" + cell("Total Transfer") + cell(totalTransfer, "Number") + "</Row>";
+    var workbook = '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>' +
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+      '<Worksheet ss:Name="Transaksi"><Table>' + rows + '</Table></Worksheet>' +
+      '<Worksheet ss:Name="Ringkasan"><Table>' + summary + '</Table></Worksheet></Workbook>';
+    var fileName = "DuitKu-Laporan-" + localDateString() + ".xls";
+    var fileBlob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+
+    try {
+      var capacitor = window.Capacitor;
+      var isNative = Boolean(capacitor && typeof capacitor.isNativePlatform === "function" && capacitor.isNativePlatform());
+      if (isNative && typeof capacitor.registerPlugin === "function") {
+        var exportPlugin = capacitor.registerPlugin("DuitKuExport");
+        await exportPlugin.shareSpreadsheet({ fileName: fileName, content: workbook });
+        if (feedbackNode) feedbackNode.textContent = "Laporan siap dibagikan. Pilih Excel, Drive, atau Simpan di perangkat pada menu Android.";
+        showFeedback("File Excel berhasil dibuat.");
+        showToast("Pilih aplikasi tujuan untuk menyimpan laporan Excel.");
+        return;
+      }
+
+      var file = new File([fileBlob], fileName, { type: "application/vnd.ms-excel" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: "Laporan DuitKu", files: [file] });
+      } else {
+        var url = URL.createObjectURL(fileBlob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      }
+      if (feedbackNode) feedbackNode.textContent = "File Excel berhasil disiapkan.";
+      showFeedback("File Excel berhasil diekspor.");
+    } catch (error) {
+      var message = error && error.message ? error.message : "Tidak dapat membuat file Excel.";
+      if (feedbackNode) feedbackNode.textContent = message;
+      showFeedback(message, true);
+      showToast("Ekspor belum berhasil. Coba lagi.", true);
+    }
   });
 
   document.getElementById("todayLabel").textContent = new Intl.DateTimeFormat("id-ID", {
@@ -532,6 +644,8 @@
   }).format(new Date());
   document.getElementById("yearLabel").textContent = String(new Date().getFullYear());
   document.getElementById("transactionDate").value = localDateString();
+  var transferDateInput = document.getElementById("transferDate");
+  if (transferDateInput) transferDateInput.value = localDateString();
 
   updateCategoryOptions();
   renderAll();

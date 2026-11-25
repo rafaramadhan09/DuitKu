@@ -12,6 +12,9 @@ Aplikasi pencatat keuangan pribadi untuk membantu mengelola pemasukan, pengeluar
 - Melihat, mencari, dan memfilter transaksi.
 - Menghapus transaksi dengan konfirmasi; saldo dan ringkasan dihitung ulang otomatis.
 - Memisahkan saldo cash dan m-banking/e-wallet.
+- Mencatat penarikan M-Banking ke Cash sebagai transfer antardompet; saldo M-Banking berkurang dan Cash bertambah tanpa dihitung sebagai pengeluaran.
+- Ekspor Excel Android melalui menu berbagi native sehingga laporan dapat disimpan atau dibuka di aplikasi spreadsheet.
+- Pembaruan fitur web dapat diterapkan langsung dari dalam aplikasi saat online; perubahan komponen Android inti tetap memerlukan paket aplikasi baru.
 - Navigasi per halaman, optimasi tampilan mobile, tombol hapus yang jelas, dan animasi transisi premium.
 - Identitas visual monogram DK yang menyambung pada ikon aplikasi dan launcher Android.
 - Mengekspor transaksi dan ringkasan dompet ke workbook Excel (.xls).
@@ -52,12 +55,12 @@ Repository ini juga menyiapkan build Android menggunakan Capacitor 8.
 1. Buka tab **Actions** di GitHub.
 2. Pilih workflow **Build & Release DuitKu Android**.
 3. Klik **Run workflow**.
-4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.2.0`. Kosongkan input tersebut untuk hanya membuat artifact APK.
+4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.3.0`. Kosongkan input tersebut untuk hanya membuat artifact APK.
 5. Setelah workflow berhasil, unduh APK dari GitHub Release atau artifact `DuitKu-debug-apk`.
 
-Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.2.0**. Pemeriksa pembaruan di dalam aplikasi hanya menawarkan GitHub Release stabil, bukan prerelease.
+Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.3.0**. Pemeriksa pembaruan di dalam aplikasi mengambil versi web terbaru dan menerapkan pembaruan fitur/tampilan tanpa membuka halaman unduhan. Perubahan kode native Android tetap membutuhkan pembaruan paket Android.
 
-**Catatan distribusi:** workflow saat ini menghasilkan APK debug agar mudah diuji. Ini belum merupakan paket produksi bertanda tangan permanen untuk Play Store. Untuk pembaruan langsung tanpa uninstall, semua APK harus ditandatangani dengan keystore yang sama. Simpan keystore dan password di GitHub Actions Secrets, jangan commit ke repository.
+**Catatan distribusi:** workflow saat ini menghasilkan APK debug agar mudah diuji. Ini belum merupakan paket produksi bertanda tangan permanen untuk Play Store. Kunci debug Android disimpan pada cache GitHub Actions agar build selanjutnya memakai sertifikat yang sama. Versi debug lama yang dibuat sebelum cache kunci tersedia mungkin perlu migrasi instalasi sekali; ekspor Excel terlebih dahulu sebagai cadangan.
 
 ### Teknologi Android
 
