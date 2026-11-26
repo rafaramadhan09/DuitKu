@@ -20,6 +20,7 @@
   var transactions = loadTransactions();
   var activeFilter = "all";
   var searchTerm = "";
+  var editingTransactionId = null;
   var walletSelect = document.getElementById("transactionWallet");
 
   var form = document.getElementById("transactionForm");
@@ -183,6 +184,7 @@
   }
 
   function renderSummary() {
+    var now = new Date();
     var totals = totalsForMonth(monthKey(localDateString()));
     var allIncome = 0;
     var allExpense = 0;
@@ -192,11 +194,34 @@
     });
 
     document.getElementById("balanceValue").textContent = money(allIncome - allExpense);
-    var wt=walletBalances();
-    ["bankBalance","bankBalancePage"].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=money(wt.bank);});
-    ["cashBalance","cashBalancePage"].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=money(wt.cash);});
+    var wallets = walletBalances();
+    ["bankBalance", "bankBalancePage"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) node.textContent = money(wallets.bank);
+    });
+    ["cashBalance", "cashBalancePage"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) node.textContent = money(wallets.cash);
+    });
     document.getElementById("incomeValue").textContent = money(totals.income);
     document.getElementById("expenseValue").textContent = money(totals.expense);
+
+    var net = totals.income - totals.expense;
+    var elapsedDays = Math.max(1, now.getDate());
+    var rate = totals.income > 0 ? net / totals.income * 100 : 0;
+    var netNode = document.getElementById("netFlowValue");
+    var avgNode = document.getElementById("averageExpenseValue");
+    var rateNode = document.getElementById("savingsRateValue");
+    var rateMeter = document.getElementById("savingsRateMeter");
+    var netFoot = document.getElementById("netFlowFoot");
+    if (netNode) {
+      netNode.textContent = (net > 0 ? "+" : net < 0 ? "−" : "") + money(Math.abs(net));
+      netNode.classList.toggle("is-negative", net < 0);
+    }
+    if (avgNode) avgNode.textContent = money(totals.expense / elapsedDays);
+    if (rateNode) rateNode.textContent = totals.income > 0 ? Math.round(rate) + "%" : "—";
+    if (rateMeter) rateMeter.style.width = Math.max(0, Math.min(100, rate)) + "%";
+    if (netFoot) netFoot.textContent = net >= 0 ? "Arus kas bulan ini positif" : "Pengeluaran melebihi pemasukan";
   }
 
   function renderCashflow() {
@@ -206,32 +231,68 @@
     for (var i = 5; i >= 0; i--) {
       var date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       var key = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
-      months.push({
-        key: key,
-        label: monthLabel(date),
-        totals: totalsForMonth(key)
-      });
+      months.push({ key: key, label: monthLabel(date), totals: totalsForMonth(key) });
+    }
+
+    var hasValues = months.some(function (item) {
+      return item.totals.income > 0 || item.totals.expense > 0;
+    });
+    if (!hasValues) {
+      chart.innerHTML = '<p class="chart-empty">Grafik akan terbentuk setelah ada transaksi pemasukan atau pengeluaran.</p>';
+      return;
     }
 
     var maxValue = Math.max.apply(null, months.map(function (item) {
       return Math.max(item.totals.income, item.totals.expense);
     }).concat([1]));
-
-    if (!transactions.length) {
-      chart.innerHTML = '<p class="chart-empty">Belum ada data transaksi untuk ditampilkan.</p>';
-      return;
+    var left = 42, right = 430, top = 18, bottom = 137;
+    var xStep = (right - left) / (months.length - 1);
+    function yFor(value) { return bottom - (value / maxValue) * 104; }
+    function pathFor(type) {
+      return months.map(function (item, index) {
+        return (index === 0 ? "M" : "L") + (left + xStep * index).toFixed(1) + "," +
+          yFor(item.totals[type]).toFixed(1);
+      }).join(" ");
     }
-
-    chart.innerHTML = months.map(function (item) {
-      var incomeHeight = Math.max(3, item.totals.income / maxValue * 108);
-      var expenseHeight = Math.max(3, item.totals.expense / maxValue * 108);
-      return '<div class="chart-column" title="' + escapeHTML(item.label) + ': pemasukan ' +
-        escapeHTML(money(item.totals.income)) + ', pengeluaran ' + escapeHTML(money(item.totals.expense)) + '">' +
-        '<div class="bar-pair">' +
-        '<div class="chart-bar income-bar" style="height:' + incomeHeight + 'px"></div>' +
-        '<div class="chart-bar expense-bar" style="height:' + expenseHeight + 'px"></div>' +
-        '</div><span class="chart-month">' + escapeHTML(item.label) + '</span></div>';
+    function areaFor(type) {
+      return "M" + left + "," + bottom + " " +
+        months.map(function (item, index) {
+          return "L" + (left + xStep * index).toFixed(1) + "," + yFor(item.totals[type]).toFixed(1);
+        }).join(" ") + " L" + right + "," + bottom + " Z";
+    }
+    var incomePath = pathFor("income");
+    var expensePath = pathFor("expense");
+    var grid = [0, 1, 2, 3].map(function (index) {
+      var y = top + index * 34;
+      return '<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y +
+        '" stroke="#edf1ed" stroke-width="1" stroke-dasharray="3 5"/>';
     }).join("");
+    var incomePoints = months.map(function (item, index) {
+      var x = (left + xStep * index).toFixed(1);
+      var y = yFor(item.totals.income).toFixed(1);
+      return '<circle cx="' + x + '" cy="' + y + '" r="3.8" fill="#245f45" stroke="#fff" stroke-width="2"><title>' +
+        escapeHTML(item.label + " • Pemasukan " + money(item.totals.income)) + '</title></circle>';
+    }).join("");
+    var expensePoints = months.map(function (item, index) {
+      var x = (left + xStep * index).toFixed(1);
+      var y = yFor(item.totals.expense).toFixed(1);
+      return '<circle cx="' + x + '" cy="' + y + '" r="3.8" fill="#c18e68" stroke="#fff" stroke-width="2"><title>' +
+        escapeHTML(item.label + " • Pengeluaran " + money(item.totals.expense)) + '</title></circle>';
+    }).join("");
+    var labels = months.map(function (item, index) {
+      var x = (left + xStep * index).toFixed(1);
+      return '<text x="' + x + '" y="163" text-anchor="middle" fill="#8b978e" font-size="10">' +
+        escapeHTML(item.label) + '</text>';
+    }).join("");
+
+    chart.innerHTML = '<div class="trend-chart-wrap"><svg class="trend-chart" viewBox="0 0 450 176" role="img" aria-label="Grafik arus kas enam bulan terakhir">' +
+      '<defs><linearGradient id="incomeArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#245f45" stop-opacity=".18"/><stop offset="100%" stop-color="#245f45" stop-opacity="0"/></linearGradient>' +
+      '<linearGradient id="expenseArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c18e68" stop-opacity=".14"/><stop offset="100%" stop-color="#c18e68" stop-opacity="0"/></linearGradient></defs>' +
+      grid + '<path d="' + areaFor("income") + '" fill="url(#incomeArea)"/>' +
+      '<path d="' + areaFor("expense") + '" fill="url(#expenseArea)"/>' +
+      '<path d="' + incomePath + '" fill="none" stroke="#245f45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="' + expensePath + '" fill="none" stroke="#c18e68" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      incomePoints + expensePoints + labels + '</svg></div>';
   }
 
   function renderCategories() {
@@ -239,6 +300,7 @@
     var currentKey = monthKey(localDateString());
     var totals = {};
     var overall = 0;
+    var palette = ["#245f45", "#bd9b68", "#8da99a", "#c88978", "#778ca5"];
 
     transactions.forEach(function (item) {
       if (item.type === "expense" && monthKey(item.date) === currentKey) {
@@ -248,22 +310,40 @@
     });
 
     document.getElementById("categoryTotal").textContent = money(overall);
-    var entries = Object.keys(totals).map(function (key) {
-      return { name: key, amount: totals[key] };
-    }).sort(function (a, b) { return b.amount - a.amount; }).slice(0, 5);
+    var allEntries = Object.keys(totals).map(function (name) {
+      return { name: name, amount: totals[name] };
+    }).sort(function (a, b) { return b.amount - a.amount; });
+    var entries = allEntries.slice(0, 5);
+    if (allEntries.length > 5) {
+      var remainder = allEntries.slice(4).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      entries = allEntries.slice(0, 4).concat([{ name: "Lainnya", amount: remainder }]);
+    }
 
-    if (!entries.length) {
-      container.innerHTML = '<p class="chart-empty">Kategori pengeluaran akan muncul setelah kamu mencatat transaksi.</p>';
+    if (!entries.length || overall <= 0) {
+      container.innerHTML = '<p class="chart-empty">Belum ada pengeluaran bulan ini. Distribusi kategori akan muncul di sini.</p>';
       return;
     }
 
-    container.innerHTML = entries.map(function (entry) {
-      var percent = overall ? entry.amount / overall * 100 : 0;
-      return '<div class="category-item"><div class="category-item-top"><span>' +
-        escapeHTML(entry.name) + '</span><strong>' + escapeHTML(money(entry.amount)) +
-        '</strong></div><div class="category-track"><div class="category-fill" style="width:' +
-        percent + '%"></div></div></div>';
+    var angle = 0;
+    var slices = entries.map(function (entry, index) {
+      var percent = entry.amount / overall * 100;
+      var next = angle + percent * 3.6;
+      var part = palette[index % palette.length] + " " + angle.toFixed(2) + "deg " + next.toFixed(2) + "deg";
+      angle = next;
+      entry.percent = percent;
+      entry.color = palette[index % palette.length];
+      return part;
+    });
+    var legend = entries.map(function (entry) {
+      return '<div class="donut-legend-item"><span class="donut-swatch" style="background:' + entry.color + '"></span>' +
+        '<span class="donut-legend-name">' + escapeHTML(entry.name) + '</span>' +
+        '<span class="donut-legend-percent">' + entry.percent.toFixed(0) + '%</span>' +
+        '<strong>' + escapeHTML(money(entry.amount)) + '</strong></div>';
     }).join("");
+
+    container.innerHTML = '<div class="donut-layout"><div class="donut-chart" role="img" aria-label="Distribusi pengeluaran berdasarkan kategori" style="background:conic-gradient(' +
+      slices.join(",") + ')"><div class="donut-hole"><span>Total</span><strong>' + escapeHTML(money(overall)) +
+      '</strong><small>Bulan ini</small></div></div><div class="donut-legend">' + legend + '</div></div>';
   }
 
   function renderTransactions() {
@@ -284,6 +364,13 @@
         ? (item.fromWallet === "cash" ? "Cash" : "M-Banking") + " → " + (item.toWallet === "cash" ? "Cash" : "M-Banking")
         : (item.wallet === "cash" ? "Cash" : "M-Banking");
       var typeLabel = transfer ? "Transfer" : (income ? "Pemasukan" : "Pengeluaran");
+      var actions = '<div class="transaction-actions">';
+      if (!transfer) {
+        actions += '<button class="edit-button" type="button" data-edit="' + escapeHTML(item.id) +
+          '" aria-label="Ubah transaksi ' + escapeHTML(item.name) + '">Ubah</button>';
+      }
+      actions += '<button class="delete-button" type="button" data-delete="' + escapeHTML(item.id) +
+        '" aria-label="Hapus transaksi ' + escapeHTML(item.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6"/></svg><span>Hapus</span></button></div>';
       return '<tr>' +
         '<td><div class="transaction-name"><span class="transaction-symbol ' + (income ? "income" : (transfer ? "transfer" : "expense")) + '">' +
         escapeHTML(icon) + '</span><span>' + escapeHTML(item.name) + note + '</span></div></td>' +
@@ -292,9 +379,7 @@
         '<td>' + escapeHTML(formatDate(item.date)) + '</td>' +
         '<td class="amount-cell ' + (transfer ? "transfer-amount" : (income ? "" : "negative")) + '">' +
         (transfer ? "⇄ " : (income ? "+" : "−")) + escapeHTML(money(item.amount)) + '</td>' +
-        '<td><button class="delete-button" type="button" data-delete="' + escapeHTML(item.id) +
-        '" aria-label="Hapus transaksi ' + escapeHTML(item.name) + '" title="Hapus transaksi">' +
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6"/></svg><span>Hapus</span></button></td>' +
+        '<td>' + actions + '</td>' +
         '</tr>';
     }).join("");
 
@@ -316,7 +401,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.3.0";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.4.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
@@ -401,6 +486,42 @@
     }
   }
 
+  function resetTransactionForm() {
+    editingTransactionId = null;
+    form.reset();
+    document.getElementById("transactionDate").value = localDateString();
+    document.querySelector('input[name="type"][value="income"]').checked = true;
+    updateCategoryOptions();
+    var submitButton = form.querySelector(".submit-button");
+    if (submitButton) submitButton.innerHTML = 'Simpan transaksi <span>→</span>';
+    var cancelButton = document.getElementById("cancelEditButton");
+    if (cancelButton) cancelButton.hidden = true;
+    var heading = document.getElementById("transactionFormTitle");
+    if (heading) heading.textContent = "Detail transaksi";
+    showFeedback("");
+  }
+
+  function beginTransactionEdit(transaction) {
+    editingTransactionId = transaction.id;
+    document.getElementById("transactionName").value = transaction.name;
+    document.getElementById("transactionAmount").value = transaction.amount;
+    document.getElementById("transactionWallet").value = transaction.wallet === "cash" ? "cash" : "bank";
+    document.querySelector('input[name="type"][value="' + transaction.type + '"]').checked = true;
+    updateCategoryOptions();
+    categorySelect.value = transaction.category;
+    document.getElementById("transactionDate").value = transaction.date;
+    document.getElementById("transactionNote").value = transaction.note || "";
+    var submitButton = form.querySelector(".submit-button");
+    if (submitButton) submitButton.innerHTML = 'Simpan perubahan <span>✓</span>';
+    var cancelButton = document.getElementById("cancelEditButton");
+    if (cancelButton) cancelButton.hidden = false;
+    var heading = document.getElementById("transactionFormTitle");
+    if (heading) heading.textContent = "Ubah transaksi";
+    showFeedback("Mode ubah aktif. Koreksi data lalu simpan perubahan.");
+    switchPage("add");
+    document.getElementById("transactionName").focus();
+  }
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     var data = new FormData(form);
@@ -417,35 +538,47 @@
       return;
     }
 
-    var transaction = {
-      id: (window.crypto && window.crypto.randomUUID)
+    var previous = transactions.slice();
+    var isEditing = Boolean(editingTransactionId);
+    var updatedTransaction = {
+      id: editingTransactionId || ((window.crypto && window.crypto.randomUUID)
         ? window.crypto.randomUUID()
-        : String(Date.now()) + "-" + Math.random().toString(16).slice(2),
+        : String(Date.now()) + "-" + Math.random().toString(16).slice(2)),
       type: type,
       name: name,
-      amount: Math.round(amount),
+      amount: amount,
       category: category,
       wallet: wallet === "cash" ? "cash" : "bank",
       date: date,
       note: note
     };
 
-    transactions.push(transaction);
+    if (isEditing) {
+      var index = transactions.findIndex(function (item) { return item.id === editingTransactionId; });
+      if (index < 0) {
+        resetTransactionForm();
+        showToast("Transaksi yang akan diubah tidak ditemukan.", true);
+        return;
+      }
+      transactions[index] = updatedTransaction;
+    } else {
+      transactions.push(updatedTransaction);
+    }
+
     if (!saveTransactions()) {
-      transactions.pop();
+      transactions = previous;
       return;
     }
 
-    form.reset();
-    document.getElementById("transactionDate").value = localDateString();
-    document.querySelector('input[name="type"][value="income"]').checked = true;
-    updateCategoryOptions();
-    showFeedback("Transaksi berhasil disimpan.");
+    resetTransactionForm();
     renderAll();
     switchPage("home");
-    showToast("Transaksi berhasil disimpan.");
+    showToast(isEditing ? "Perubahan transaksi berhasil disimpan." : "Transaksi berhasil disimpan.");
     document.getElementById("transactionName").focus();
   });
+
+  var cancelEditButton = document.getElementById("cancelEditButton");
+  if (cancelEditButton) cancelEditButton.addEventListener("click", resetTransactionForm);
 
   typeInputs.forEach(function (input) {
     input.addEventListener("change", updateCategoryOptions);
@@ -535,22 +668,27 @@
   });
 
   transactionRows.addEventListener("click", function (event) {
-    var button = event.target.closest("[data-delete]");
+    var button = event.target.closest("[data-edit], [data-delete]");
     if (!button) return;
-    var id = button.getAttribute("data-delete");
+    var id = button.getAttribute("data-edit") || button.getAttribute("data-delete");
     var selected = transactions.find(function (item) { return item.id === id; });
     if (!selected) return;
-    if (!window.confirm('Hapus transaksi "' + selected.name + '" senilai ' + money(selected.amount) + '?\\nSaldo dompet akan dihitung ulang.')) return;
 
-    var oldTransactions = transactions;
-    transactions = transactions.filter(function (item) { return item.id !== id; });
-    if (!saveTransactions()) {
-      transactions = oldTransactions;
+    if (button.hasAttribute("data-edit")) {
+      beginTransactionEdit(selected);
       return;
     }
-    showFeedback("Transaksi berhasil dihapus.");
+
+    if (!window.confirm('Hapus transaksi "' + selected.name + '" senilai ' + money(selected.amount) + '?\\nSaldo dompet dan statistik akan dihitung ulang.')) return;
+    var previous = transactions.slice();
+    transactions = transactions.filter(function (item) { return item.id !== id; });
+    if (!saveTransactions()) {
+      transactions = previous;
+      return;
+    }
+    if (editingTransactionId === id) resetTransactionForm();
     renderAll();
-    showToast("Transaksi dihapus. Saldo dompet sudah diperbarui.");
+    showToast("Transaksi berhasil dihapus. Saldo dan statistik diperbarui.");
   });
 
   document.getElementById("exportButton").addEventListener("click", async function () {
@@ -658,14 +796,17 @@
     document.documentElement.classList.add("ui-ready");
   }
 
+  function runWhenReady(callback) {
+    if (document.readyState === "complete") callback();
+    else window.addEventListener("load", callback, { once: true });
+  }
+
   if (updateCheckButton && navigator.onLine) {
-    window.addEventListener("load", function () {
-      checkForAppUpdate(true);
-    });
+    runWhenReady(function () { checkForAppUpdate(true); });
   }
 
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
+    runWhenReady(function () {
       navigator.serviceWorker.register("./service-worker.js").catch(function (error) {
         console.warn("DuitKu offline support could not be registered:", error);
       });
