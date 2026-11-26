@@ -45,7 +45,7 @@ assert.ok(html.includes('id="savingsRateValue"'), "Statistics cards are rendered
 assert.ok(html.includes('id="monthlyTransactionCount"'), "Monthly transaction count statistic is rendered");
 assert.ok(html.includes('id="netFlowRing"') && html.includes('id="savingsRateRing"'), "Circular statistic indicators are rendered");
 assert.ok(app.includes("ACTION_CREATE_DOCUMENT") === false, "Android saving is delegated to the native document picker");
-assert.ok(app.includes('exportPlugin.shareSpreadsheet({ fileName: fileName, content: workbook })'), "Excel file is sent to the Android save bridge");
+assert.ok(app.includes("exportPlugin.saveTextFile || exportPlugin.shareSpreadsheet"), "Excel export supports the generic native save bridge");
 assert.ok(androidBranding.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android export opens the system Save As picker");
 assert.ok(androidBranding.includes("@ActivityCallback"), "Android export waits for the document picker result");
 assert.ok(androidBranding.includes("openOutputStream(targetUri"), "Android export writes the workbook to the chosen file URI");
@@ -67,4 +67,48 @@ assert.ok(htmlVersion, "HTML version metadata exists");
 assert.equal(update.version, packageJson.version, "Update manifest matches package version");
 assert.equal(update.version, htmlVersion[1], "Update manifest matches HTML version");
 
-console.log("DuitKu finance, update, statistics, and performance smoke tests passed.");
+
+const xmlEscapeSource = extractFunction(app, "escapeXMLText", "sanitizeTransactionRecord");
+const xmlEscape = vm.runInNewContext("(" + xmlEscapeSource + ")");
+assert.equal(xmlEscape("A&B <C>\u0001"), "A&amp;B &lt;C&gt;", "Excel XML strips invalid control characters and escapes text");
+
+const sanitizeSource = extractFunction(app, "sanitizeTransactionRecord", "normalizeBackupTransactions");
+const validateDate = (value) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(value + "T00:00:00");
+  return !Number.isNaN(date.getTime()) && date.getFullYear() === Number(value.slice(0, 4)) &&
+    date.getMonth() + 1 === Number(value.slice(5, 7)) && date.getDate() === Number(value.slice(8, 10));
+};
+const sanitizeTransactionRecord = vm.runInNewContext("(" + sanitizeSource + ")", {
+  isValidDateString: validateDate
+});
+const backupSource = extractFunction(app, "normalizeBackupTransactions", "loadTransactions");
+const normalizeBackupTransactions = vm.runInNewContext("(" + backupSource + ")", {
+  sanitizeTransactionRecord,
+  Set
+});
+const backup = {
+  app: "DuitKu",
+  formatVersion: 1,
+  transactions: [
+    { id: "a", type: "income", name: "Gaji", amount: 2000000, category: "Gaji", wallet: "bank", date: "2026-11-01", note: "" },
+    { id: "b", type: "transfer", name: "Tarik tunai", amount: 500000, category: "Transfer", fromWallet: "bank", toWallet: "cash", date: "2026-11-02", note: "" }
+  ]
+};
+const restored = normalizeBackupTransactions(backup);
+assert.equal(restored.length, 2, "A complete DuitKu backup can be restored");
+assert.equal(restored[1].fromWallet, "bank", "Transfer source wallet survives backup restore");
+assert.equal(restored[1].toWallet, "cash", "Transfer destination wallet survives backup restore");
+assert.throws(() => normalizeBackupTransactions({ transactions: [backup.transactions[0], backup.transactions[0]] }), /duplikat/, "Duplicate transaction IDs are rejected");
+assert.throws(() => normalizeBackupTransactions({ transactions: [{ ...backup.transactions[0], amount: -1 }] }), /tidak valid/, "Invalid amounts are rejected");
+assert.throws(() => normalizeBackupTransactions({ transactions: [{ ...backup.transactions[0], date: "2026-02-30" }] }), /tidak valid/, "Impossible dates are rejected");
+assert.ok(html.includes('id="backupExportButton"') && html.includes('id="backupImportButton"'), "Backup and restore controls are rendered");
+assert.ok(html.includes('id="storageWarning"'), "Storage integrity warning is rendered");
+assert.ok(html.includes('data-filter="transfer"'), "Transfer history filter is rendered");
+assert.ok(app.includes("storageLoadError") && app.includes("rawTransactionsSnapshot"), "Invalid local data cannot be silently overwritten");
+assert.ok(app.includes("plugin.chooseBackupFile()"), "Android backup restore opens a native file picker");
+assert.ok(app.includes("plugin.saveTextFile"), "Android backup export uses a native save picker");
+assert.ok(androidBranding.includes("Intent.ACTION_OPEN_DOCUMENT"), "Android restore uses the document picker");
+assert.ok(androidBranding.includes("MAX_BACKUP_BYTES"), "Android restore enforces a maximum backup size");
+
+console.log("DuitKu finance, export, backup/restore, storage-integrity, and performance tests passed.");
