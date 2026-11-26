@@ -45,8 +45,14 @@ assert.ok(html.includes('id="savingsRateValue"'), "Statistics cards are rendered
 assert.ok(html.includes('id="monthlyTransactionCount"'), "Monthly transaction count statistic is rendered");
 assert.ok(html.includes('id="netFlowRing"') && html.includes('id="savingsRateRing"'), "Circular statistic indicators are rendered");
 assert.ok(app.includes("ACTION_CREATE_DOCUMENT") === false, "Android saving is delegated to the native document picker");
-assert.ok(app.includes("exportPlugin.saveTextFile || exportPlugin.shareSpreadsheet"), "Excel export supports the generic native save bridge");
-assert.ok(androidBranding.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android export opens the system Save As picker");
+assert.ok(app.includes("exportPlugin.saveTextFile({"), "Excel export calls the native saveTextFile method directly");
+assert.ok(androidBranding.includes("MediaStore.Downloads.EXTERNAL_CONTENT_URI"), "Android 10+ exports save through Downloads MediaStore");
+assert.ok(androidBranding.includes('Environment.DIRECTORY_DOWNLOADS + "/DuitKu"'), "Android saves into Download/DuitKu");
+assert.ok(androidBranding.includes("MediaStore.MediaColumns.IS_PENDING"), "MediaStore files stay pending until the write completes");
+assert.ok(androidBranding.includes('getContentResolver().openOutputStream(targetUri, "w")'), "Android writes bytes to the file URI");
+assert.ok(androidBranding.includes("Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q"), "Android 9 and older keep the system save picker");
+assert.ok(androidBranding.includes("Intent.ACTION_CREATE_DOCUMENT"), "Older Android export opens the system Save As picker");
+assert.ok(app.includes('report("File Excel tersimpan di " + savedLocation + ".", false)'), "Excel UI reports the verified storage location");
 assert.ok(androidBranding.includes("@ActivityCallback"), "Android export waits for the document picker result");
 assert.ok(androidBranding.includes("openOutputStream(targetUri"), "Android export writes the workbook to the chosen file URI");
 assert.ok(app.includes("new Blob([workbook]"), "Browser export creates an Excel-compatible workbook");
@@ -112,7 +118,7 @@ assert.ok(androidBranding.includes("Intent.ACTION_OPEN_DOCUMENT"), "Android rest
 assert.ok(androidBranding.includes("MAX_BACKUP_BYTES"), "Android restore enforces a maximum backup size");
 
 
-assert.ok(update.version === "1.6.0", "UI refresh release version is 1.6.0");
+assert.ok(update.version === "1.6.1", "Excel Downloads fix release version is 1.6.1");
 assert.ok(css.includes("DuitKu 1.6.0 — unified premium interface"), "Unified page styling is included");
 assert.ok(css.includes(".table-wrap tbody tr{"), "Mobile history cards remain responsive");
 assert.ok(css.includes(".form-page-panel form{display:flex;flex-direction:column"), "Transaction form uses a readable vertical layout");
@@ -121,4 +127,4 @@ assert.ok(app.includes('nav.setAttribute("aria-current", "page")'), "Navigation 
 assert.ok(app.includes('item.setAttribute("aria-pressed", selected ? "true" : "false")'), "Chart range and history filters expose their active state");
 assert.ok(!app.includes('document.getElementById("transactionName").focus();\\n  });'), "Saving a form does not focus an input inside the now-hidden page");
 
-console.log("DuitKu 1.6.0 finance, backup, responsive UI, accessibility, and performance tests passed.");
+console.log("DuitKu 1.6.1 finance, Excel Downloads, backup, responsive UI, accessibility, and performance tests passed.");
