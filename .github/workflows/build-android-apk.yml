@@ -134,13 +134,16 @@ jobs:
           cat > release-notes.md <<'NOTES'
           ## DuitKu 1.5.0
 
-          Manajemen transaksi, statistik keuangan premium, dan pembaruan fitur langsung di dalam aplikasi.
+          Tampilan forest-champagne yang lebih rapi, grafik statistik interaktif 6/12 bulan, dan mode ringan untuk Android.
 
           - Transaksi pemasukan/pengeluaran dapat diubah atau dihapus langsung dari riwayat.
           - Ekspor Excel Android menggunakan menu berbagi native untuk menyimpan atau membuka laporan.
           - Pembaruan fitur dan tampilan web diterapkan langsung di dalam aplikasi saat online.
           - Tombol ubah dan hapus ditampilkan langsung pada setiap catatan, dengan konfirmasi sebelum penghapusan.
           - Dashboard memiliki grafik tren 6/12 bulan, donut kategori, arus kas bersih, rata-rata pengeluaran harian, rasio sisa uang, dan jumlah transaksi bulan ini.
+          - Mode Otomatis mendeteksi kemampuan CPU/RAM; Mode Ringan dapat dipilih manual untuk mengurangi blur, shadow, dan animasi.
+          - Font online dihapus dan diganti font sistem Android agar aplikasi lebih cepat dibuka dan hemat data.
+          - Pembaruan menggunakan manifest kecil lalu memasang HTML/CSS/JavaScript langsung di dalam aplikasi tanpa membuka browser.
           - Pengguna dapat memilih mode Otomatis, Ringan, atau Visual Lengkap. Perangkat dengan CPU/RAM terbatas mendapat mode ringan secara otomatis.
           - Font online Google dihapus dan diganti system font agar startup lebih cepat dan hemat data.
           - Manifest update membuat aplikasi memeriksa dan memasang HTML/CSS/JavaScript terbaru di dalam DuitKu tanpa membuka browser.
