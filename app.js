@@ -21,6 +21,7 @@
   var activeFilter = "all";
   var searchTerm = "";
   var editingTransactionId = null;
+  var chartRange = 6;
   var walletSelect = document.getElementById("transactionWallet");
 
   var form = document.getElementById("transactionForm");
@@ -185,12 +186,15 @@
 
   function renderSummary() {
     var now = new Date();
-    var totals = totalsForMonth(monthKey(localDateString()));
+    var currentMonth = monthKey(localDateString());
+    var totals = totalsForMonth(currentMonth);
     var allIncome = 0;
     var allExpense = 0;
+    var monthTransactionCount = 0;
     transactions.forEach(function (item) {
       if (item.type === "income") allIncome += Number(item.amount);
       else if (item.type === "expense") allExpense += Number(item.amount);
+      if (item.type !== "transfer" && monthKey(item.date) === currentMonth) monthTransactionCount++;
     });
 
     document.getElementById("balanceValue").textContent = money(allIncome - allExpense);
@@ -214,6 +218,7 @@
     var rateNode = document.getElementById("savingsRateValue");
     var rateMeter = document.getElementById("savingsRateMeter");
     var netFoot = document.getElementById("netFlowFoot");
+    var countNode = document.getElementById("monthlyTransactionCount");
     if (netNode) {
       netNode.textContent = (net > 0 ? "+" : net < 0 ? "−" : "") + money(Math.abs(net));
       netNode.classList.toggle("is-negative", net < 0);
@@ -222,13 +227,14 @@
     if (rateNode) rateNode.textContent = totals.income > 0 ? Math.round(rate) + "%" : "—";
     if (rateMeter) rateMeter.style.width = Math.max(0, Math.min(100, rate)) + "%";
     if (netFoot) netFoot.textContent = net >= 0 ? "Arus kas bulan ini positif" : "Pengeluaran melebihi pemasukan";
+    if (countNode) countNode.textContent = String(monthTransactionCount);
   }
 
   function renderCashflow() {
     var chart = document.getElementById("cashflowChart");
     var now = new Date();
     var months = [];
-    for (var i = 5; i >= 0; i--) {
+    for (var i = chartRange - 1; i >= 0; i--) {
       var date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       var key = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
       months.push({ key: key, label: monthLabel(date), totals: totalsForMonth(key) });
@@ -246,7 +252,7 @@
       return Math.max(item.totals.income, item.totals.expense);
     }).concat([1]));
     var left = 42, right = 430, top = 18, bottom = 137;
-    var xStep = (right - left) / (months.length - 1);
+    var xStep = (right - left) / Math.max(1, months.length - 1);
     function yFor(value) { return bottom - (value / maxValue) * 104; }
     function pathFor(type) {
       return months.map(function (item, index) {
@@ -280,12 +286,14 @@
         escapeHTML(item.label + " • Pengeluaran " + money(item.totals.expense)) + '</title></circle>';
     }).join("");
     var labels = months.map(function (item, index) {
+      if (chartRange === 12 && index % 2 !== 0 && index !== months.length - 1) return "";
       var x = (left + xStep * index).toFixed(1);
-      return '<text x="' + x + '" y="163" text-anchor="middle" fill="#8b978e" font-size="10">' +
+      var fontSize = chartRange === 12 ? 8 : 10;
+      return '<text x="' + x + '" y="163" text-anchor="middle" fill="#8b978e" font-size="' + fontSize + '">' +
         escapeHTML(item.label) + '</text>';
     }).join("");
 
-    chart.innerHTML = '<div class="trend-chart-wrap"><svg class="trend-chart" viewBox="0 0 450 176" role="img" aria-label="Grafik arus kas enam bulan terakhir">' +
+    chart.innerHTML = '<div class="trend-chart-wrap"><svg class="trend-chart" viewBox="0 0 450 176" role="img" aria-label="Grafik arus kas ' + chartRange + ' bulan terakhir">' +
       '<defs><linearGradient id="incomeArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#245f45" stop-opacity=".18"/><stop offset="100%" stop-color="#245f45" stop-opacity="0"/></linearGradient>' +
       '<linearGradient id="expenseArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c18e68" stop-opacity=".14"/><stop offset="100%" stop-color="#c18e68" stop-opacity="0"/></linearGradient></defs>' +
       grid + '<path d="' + areaFor("income") + '" fill="url(#incomeArea)"/>' +
@@ -452,34 +460,28 @@
     updateCheckButton.textContent = "Memeriksa...";
     updateApplyButton.hidden = true;
     updateNotes.hidden = true;
-    if (!silent) updateStatus.textContent = "Memeriksa pembaruan fitur DuitKu...";
+    if (!silent) updateStatus.textContent = "Memeriksa versi terbaru di dalam DuitKu...";
 
     try {
-      var response = await fetch(
-        "https://raw.githubusercontent.com/rafaramadhan09/DuitKu/main/index.html?check=" + Date.now(),
-        { method: "GET", cache: "no-store" }
-      );
-      if (!response.ok) throw new Error("Server pembaruan belum dapat dijangkau (HTTP " + response.status + ").");
-      var html = await response.text();
-      var remoteDocument = new DOMParser().parseFromString(html, "text/html");
-      var remoteMeta = remoteDocument.querySelector('meta[name="duitku-version"]');
-      var latestVersion = remoteMeta ? remoteMeta.content : "";
-      if (!parseVersion(latestVersion)) throw new Error("Informasi versi pembaruan tidak valid.");
-
-      if (compareVersions(latestVersion, installedVersion) <= 0) {
-        updateStatus.textContent = "DuitKu sudah menggunakan fitur terbaru (v" + installedVersion + ").";
+      var updater = window.DuitKuUpdater;
+      if (!updater || typeof updater.check !== "function") {
+        throw new Error("Layanan update internal belum siap. Tutup lalu buka kembali DuitKu saat online.");
+      }
+      var result = await updater.check();
+      if (!result || !parseVersion(result.version)) throw new Error("Informasi versi pembaruan tidak valid.");
+      if (!result.available) {
+        updateStatus.textContent = "DuitKu sudah versi terbaru (v" + installedVersion + ").";
         return;
       }
-
-      updateStatus.textContent = "Pembaruan fitur tersedia: v" + latestVersion + ".";
-      updateApplyButton.textContent = "Perbarui sekarang ↻";
+      updateStatus.textContent = "Versi baru tersedia: v" + result.version + ".";
+      updateApplyButton.textContent = "Pasang update sekarang ↻";
       updateApplyButton.hidden = false;
-      updateNotes.textContent = "Fitur dan tampilan akan diterapkan langsung di dalam aplikasi. Tidak perlu memasang APK untuk pembaruan web.";
+      updateNotes.textContent = result.message || "Fitur dan tampilan akan diperbarui langsung di dalam DuitKu. Tidak perlu membuka browser atau memasang APK.";
       updateNotes.hidden = false;
     } catch (error) {
       updateStatus.textContent = error && error.message
         ? error.message
-        : "Tidak dapat memeriksa pembaruan. Periksa koneksi internet.";
+        : "Belum dapat memeriksa update. Periksa koneksi internet.";
     } finally {
       updateCheckButton.disabled = false;
       updateCheckButton.textContent = originalLabel;
@@ -584,6 +586,16 @@
     input.addEventListener("change", updateCategoryOptions);
   });
 
+  document.querySelectorAll(".chart-range-button").forEach(function (button) {
+    button.addEventListener("click", function () {
+      chartRange = Number(button.getAttribute("data-chart-range")) === 12 ? 12 : 6;
+      document.querySelectorAll(".chart-range-button").forEach(function (item) {
+        item.classList.toggle("active", item === button);
+      });
+      renderCashflow();
+    });
+  });
+
   document.querySelectorAll(".filter-tab").forEach(function (button) {
     button.addEventListener("click", function () {
       activeFilter = button.getAttribute("data-filter");
@@ -605,10 +617,22 @@
     });
   }
   if (updateApplyButton) {
-    updateApplyButton.addEventListener("click", function () {
+    updateApplyButton.addEventListener("click", async function () {
       updateApplyButton.disabled = true;
-      updateApplyButton.textContent = "Menerapkan pembaruan...";
-      window.location.reload();
+      updateApplyButton.textContent = "Memasang di DuitKu...";
+      updateStatus.textContent = "Mengunduh komponen fitur terbaru langsung ke aplikasi...";
+      try {
+        if (!window.DuitKuUpdater || typeof window.DuitKuUpdater.apply !== "function") {
+          throw new Error("Layanan update internal belum siap. Buka ulang aplikasi.");
+        }
+        await window.DuitKuUpdater.apply();
+        showToast("DuitKu berhasil diperbarui.");
+      } catch (error) {
+        updateStatus.textContent = error && error.message ? error.message : "Update belum berhasil dipasang.";
+        updateApplyButton.disabled = false;
+        updateApplyButton.textContent = "Coba pasang lagi";
+        showToast("Update gagal. Data transaksi tetap aman.", true);
+      }
     });
   }
 
@@ -784,6 +808,49 @@
   document.getElementById("transactionDate").value = localDateString();
   var transferDateInput = document.getElementById("transferDate");
   if (transferDateInput) transferDateInput.value = localDateString();
+
+  var performanceModeSelect = document.getElementById("performanceMode");
+  var performanceStatus = document.getElementById("performanceStatus");
+
+  function isLowPowerDevice() {
+    var cores = Number(navigator.hardwareConcurrency) || 0;
+    var memory = Number(navigator.deviceMemory) || 0;
+    return (cores > 0 && cores <= 4) || (memory > 0 && memory <= 4);
+  }
+
+  function applyPerformanceMode(mode, persist) {
+    var selected = mode === "light" || mode === "full" ? mode : "auto";
+    var lite = selected === "light" || (selected === "auto" && isLowPowerDevice());
+    document.documentElement.classList.toggle("lite-mode", lite);
+    if (performanceModeSelect && performanceModeSelect.value !== selected) {
+      performanceModeSelect.value = selected;
+    }
+    if (performanceStatus) {
+      performanceStatus.textContent = lite
+        ? "Mode ringan aktif: animasi berat, blur, dan efek dekoratif dikurangi agar HP lebih lancar dan hemat baterai."
+        : "Visual lengkap aktif: seluruh animasi halus dan efek dekoratif digunakan.";
+      if (selected === "auto" && !lite) {
+        performanceStatus.textContent = "Mode otomatis: efek visual menyesuaikan kemampuan perangkat.";
+      }
+    }
+    if (persist) {
+      try { localStorage.setItem("duitku-performance-mode", selected); } catch (error) {}
+    }
+  }
+
+  var savedPerformanceMode = "auto";
+  try { savedPerformanceMode = localStorage.getItem("duitku-performance-mode") || "auto"; } catch (error) {}
+  applyPerformanceMode(savedPerformanceMode, false);
+  if (performanceModeSelect) {
+    performanceModeSelect.addEventListener("change", function () {
+      applyPerformanceMode(performanceModeSelect.value, true);
+      showToast(performanceModeSelect.value === "light"
+        ? "Mode ringan diaktifkan."
+        : performanceModeSelect.value === "full"
+          ? "Visual lengkap diaktifkan."
+          : "Mode otomatis diaktifkan.");
+    });
+  }
 
   updateCategoryOptions();
   renderAll();
