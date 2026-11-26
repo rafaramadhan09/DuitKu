@@ -524,7 +524,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.2";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.6.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
@@ -716,7 +716,6 @@
     renderAll();
     switchPage("home");
     showToast(isEditing ? "Perubahan transaksi berhasil disimpan." : "Transaksi berhasil disimpan.");
-    document.getElementById("transactionName").focus();
   });
 
   var cancelEditButton = document.getElementById("cancelEditButton");
@@ -730,7 +729,9 @@
     button.addEventListener("click", function () {
       chartRange = Number(button.getAttribute("data-chart-range")) === 12 ? 12 : 6;
       document.querySelectorAll(".chart-range-button").forEach(function (item) {
-        item.classList.toggle("active", item === button);
+        var selected = item === button;
+        item.classList.toggle("active", selected);
+        item.setAttribute("aria-pressed", selected ? "true" : "false");
       });
       renderCashflow();
     });
@@ -740,7 +741,9 @@
     button.addEventListener("click", function () {
       activeFilter = button.getAttribute("data-filter");
       document.querySelectorAll(".filter-tab").forEach(function (tab) {
-        tab.classList.toggle("active", tab === button);
+        var selected = tab === button;
+        tab.classList.toggle("active", selected);
+        tab.setAttribute("aria-pressed", selected ? "true" : "false");
       });
       renderTransactions();
     });
@@ -821,11 +824,24 @@
 
   function switchPage(page) {
     if (!document.querySelector('[data-page-panel="' + page + '"]')) page = "home";
-    document.querySelectorAll("[data-page-panel]").forEach(function (panel) { panel.classList.toggle("active", panel.getAttribute("data-page-panel") === page); });
-    document.querySelectorAll("[data-page]").forEach(function (nav) { nav.classList.toggle("active", nav.getAttribute("data-page") === page); });
-    var titles = {home:"Ringkasan",transactions:"Transaksi",add:"Catat transaksi",wallets:"Dompet",export:"Export & data"};
-    var title = document.getElementById("pageTitle"); if (title) title.textContent = titles[page] || "DuitKu";
-    window.scrollTo({top:0,behavior:"smooth"});
+    document.querySelectorAll("[data-page-panel]").forEach(function (panel) {
+      var selected = panel.getAttribute("data-page-panel") === page;
+      panel.classList.toggle("active", selected);
+      panel.setAttribute("aria-hidden", selected ? "false" : "true");
+    });
+    document.querySelectorAll(".nav-link[data-page], .mobile-nav-item[data-page]").forEach(function (nav) {
+      var selected = nav.getAttribute("data-page") === page;
+      nav.classList.toggle("active", selected);
+      if (selected) nav.setAttribute("aria-current", "page");
+      else nav.removeAttribute("aria-current");
+    });
+    var titles = {home:"Ringkasan",transactions:"Riwayat transaksi",add:"Catat transaksi",wallets:"Dompet & saldo",export:"Laporan & data"};
+    var title = document.getElementById("pageTitle");
+    if (title) title.textContent = titles[page] || "DuitKu";
+    var reducedMotion = document.documentElement.classList.contains("lite-mode") ||
+      (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    try { window.scrollTo({top:0,behavior:reducedMotion ? "auto" : "smooth"}); }
+    catch (error) { window.scrollTo(0,0); }
   }
   document.querySelectorAll("[data-page]").forEach(function (link) {
     link.addEventListener("click", function (event) { event.preventDefault(); switchPage(link.getAttribute("data-page")); });

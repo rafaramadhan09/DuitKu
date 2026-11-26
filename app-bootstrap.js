@@ -2,7 +2,7 @@
   "use strict";
 
   var ROOT = "https://raw.githubusercontent.com/rafaramadhan09/DuitKu/main/";
-  var APP_VERSION = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.2";
+  var APP_VERSION = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.6.0";
   var scriptStarted = false;
   var localScriptStarted = false;
   var cachedManifest = null;
