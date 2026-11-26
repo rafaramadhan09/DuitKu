@@ -8,6 +8,7 @@ const webFiles = [
   "styles.css",
   "app.js",
   "app-bootstrap.js",
+  "update.json",
   "manifest.webmanifest",
   "icon.svg",
   "service-worker.js"
