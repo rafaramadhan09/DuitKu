@@ -6,6 +6,8 @@ const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const bootstrap = await readFile(new URL("../app-bootstrap.js", import.meta.url), "utf8");
+const update = JSON.parse(await readFile(new URL("../update.json", import.meta.url), "utf8"));
+const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 
 function extractFunction(source, signature, nextSignature) {
   const start = source.indexOf("  function " + signature + "(");
@@ -19,7 +21,6 @@ const transactions = [
   { id: "transfer-1", type: "transfer", amount: 200000, fromWallet: "bank", toWallet: "cash", date: "2026-11-03" },
   { id: "expense-1", type: "expense", amount: 50000, wallet: "cash", date: "2026-11-04" }
 ];
-
 const monthKey = (date) => String(date).slice(0, 7);
 const walletBalancesSource = extractFunction(app, "walletBalances", "renderSummary");
 const walletBalances = vm.runInNewContext("(" + walletBalancesSource + ")", { transactions });
@@ -40,7 +41,18 @@ assert.ok(app.includes('button.hasAttribute("data-edit")'), "Edit action is hand
 assert.ok(app.includes('button.getAttribute("data-delete")'), "Delete action is handled");
 assert.ok(html.includes('id="cancelEditButton"'), "Edit cancellation control is rendered");
 assert.ok(html.includes('id="savingsRateValue"'), "Statistics cards are rendered");
+assert.ok(html.includes('data-chart-range="12"'), "Twelve-month chart range is available");
+assert.ok(html.includes('id="performanceMode"'), "User can choose device performance mode");
+assert.ok(app.includes("duitku-performance-mode"), "Performance preference is saved");
+assert.ok(bootstrap.includes("window.DuitKuUpdater"), "The in-app updater API is exposed at startup");
+assert.ok(app.includes("window.DuitKuUpdater.apply"), "The update button applies assets inside the app");
+assert.ok(css.includes("html.lite-mode"), "Low-power rendering profile is present");
+assert.ok(!css.includes("fonts.googleapis.com"), "No remote Google Fonts request is required");
 assert.ok(css.includes(".table-wrap table{display:block!important;width:100%!important;min-width:0!important"), "Mobile history fits screen width");
-assert.ok(bootstrap.includes("raw.githubusercontent.com/rafaramadhan09/DuitKu/main/"), "OTA loads the owner's repository in-app");
 
-console.log("DuitKu finance logic smoke tests passed.");
+const htmlVersion = html.match(/<meta name="duitku-version" content="([^"]+)"/);
+assert.ok(htmlVersion, "HTML version metadata exists");
+assert.equal(update.version, packageJson.version, "Update manifest matches package version");
+assert.equal(update.version, htmlVersion[1], "Update manifest matches HTML version");
+
+console.log("DuitKu finance, update, statistics, and performance smoke tests passed.");
