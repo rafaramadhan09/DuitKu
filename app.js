@@ -524,7 +524,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.2";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.6.0";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
