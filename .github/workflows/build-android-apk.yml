@@ -83,6 +83,7 @@ jobs:
           node --check app-bootstrap.js
           node --check scripts/copy-web.mjs
           node --check scripts/apply-android-branding.mjs
+          node scripts/test-finance-logic.mjs
           node - <<'NODE'
           const fs = require("node:fs");
           const vm = require("node:vm");
