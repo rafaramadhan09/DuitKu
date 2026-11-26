@@ -1946,7 +1946,7 @@ button:disabled{cursor:wait!important;opacity:.62;transform:none!important;box-s
   .app-update-actions .button{width:100%}
   .page-footer{display:grid;justify-content:center;gap:4px;margin-top:17px;padding:12px 3px;text-align:center;font-size:9px}
   .mobile-nav{
-    left:9px;right:9px;bottom:calc(7px + env(safe-area-inset-bottom));gap:2px;
+    display:flex;left:9px;right:9px;bottom:calc(7px + env(safe-area-inset-bottom));gap:2px;
     padding:7px 4px;border:1px solid rgba(220,231,219,.9);border-radius:19px;
     background:rgba(255,255,255,.96);box-shadow:0 12px 32px rgba(16,46,29,.15)
   }
