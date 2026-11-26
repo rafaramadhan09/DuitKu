@@ -41,6 +41,7 @@ assert.ok(app.includes('button.hasAttribute("data-edit")'), "Edit action is hand
 assert.ok(app.includes('button.getAttribute("data-delete")'), "Delete action is handled");
 assert.ok(html.includes('id="cancelEditButton"'), "Edit cancellation control is rendered");
 assert.ok(html.includes('id="savingsRateValue"'), "Statistics cards are rendered");
+assert.ok(html.includes('id="monthlyTransactionCount"'), "Monthly transaction count statistic is rendered");
 assert.ok(html.includes('data-chart-range="12"'), "Twelve-month chart range is available");
 assert.ok(html.includes('id="performanceMode"'), "User can choose device performance mode");
 assert.ok(app.includes("duitku-performance-mode"), "Performance preference is saved");
