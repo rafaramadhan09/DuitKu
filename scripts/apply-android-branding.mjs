@@ -94,7 +94,138 @@ const packageDir = path.join(androidRoot, "java", "com", "rafaramadhan09", "duit
 await mkdir(packageDir, { recursive: true });
 const activitySource = "package com.rafaramadhan09.duitku;\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DuitKuExportPlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n";
 await writeFile(path.join(packageDir, "MainActivity.java"), activitySource, "utf8");
-const exportPluginSource = "package com.rafaramadhan09.duitku;\n\nimport android.app.Activity;\nimport android.content.Intent;\nimport android.net.Uri;\nimport androidx.activity.result.ActivityResult;\nimport com.getcapacitor.JSObject;\nimport com.getcapacitor.Plugin;\nimport com.getcapacitor.PluginCall;\nimport com.getcapacitor.PluginMethod;\nimport com.getcapacitor.annotation.ActivityCallback;\nimport com.getcapacitor.annotation.CapacitorPlugin;\nimport java.io.OutputStream;\nimport java.nio.charset.StandardCharsets;\n\n@CapacitorPlugin(name = \"DuitKuExport\")\npublic class DuitKuExportPlugin extends Plugin {\n    @PluginMethod\n    public void shareSpreadsheet(PluginCall call) {\n        String requestedName = call.getString(\"fileName\");\n        String content = call.getString(\"content\");\n        if (content == null || content.isEmpty()) {\n            call.reject(\"Isi laporan Excel kosong.\");\n            return;\n        }\n\n        String safeName = requestedName == null ? \"DuitKu-Laporan.xls\" :\n            requestedName.replaceAll(\"[^A-Za-z0-9._-]\", \"_\");\n        if (!safeName.toLowerCase().endsWith(\".xls\")) safeName += \".xls\";\n\n        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);\n        intent.addCategory(Intent.CATEGORY_OPENABLE);\n        intent.setType(\"application/vnd.ms-excel\");\n        intent.putExtra(Intent.EXTRA_TITLE, safeName);\n        startActivityForResult(call, intent, \"saveSpreadsheetResult\");\n    }\n\n    @ActivityCallback\n    private void saveSpreadsheetResult(PluginCall call, ActivityResult result) {\n        if (call == null) return;\n\n        if (result.getResultCode() != Activity.RESULT_OK ||\n            result.getData() == null || result.getData().getData() == null) {\n            JSObject cancelled = new JSObject();\n            cancelled.put(\"cancelled\", true);\n            call.resolve(cancelled);\n            return;\n        }\n\n        Uri targetUri = result.getData().getData();\n        String content = call.getString(\"content\");\n        if (content == null || content.isEmpty()) {\n            call.reject(\"Isi laporan Excel kosong.\");\n            return;\n        }\n\n        try (OutputStream output = getContext().getContentResolver().openOutputStream(targetUri, \"w\")) {\n            if (output == null) throw new IllegalStateException(\"Folder tujuan tidak dapat dibuka.\");\n            output.write(content.getBytes(StandardCharsets.UTF_8));\n            output.flush();\n\n            JSObject saved = new JSObject();\n            saved.put(\"saved\", true);\n            saved.put(\"uri\", targetUri.toString());\n            call.resolve(saved);\n        } catch (Exception error) {\n            call.reject(\"Gagal menyimpan file Excel: \" + error.getMessage(), error);\n        }\n    }\n}";
+const exportPluginSource = \`package com.rafaramadhan09.duitku;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import androidx.activity.result.ActivityResult;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
+@CapacitorPlugin(name = "DuitKuExport")
+public class DuitKuExportPlugin extends Plugin {
+    private static final int MAX_BACKUP_BYTES = 15 * 1024 * 1024;
+
+    @PluginMethod
+    public void shareSpreadsheet(PluginCall call) {
+        startSavePicker(call, "saveSpreadsheetResult", "application/vnd.ms-excel");
+    }
+
+    @PluginMethod
+    public void saveTextFile(PluginCall call) {
+        String mimeType = call.getString("mimeType");
+        if (mimeType == null || mimeType.trim().isEmpty()) mimeType = "application/octet-stream";
+        startSavePicker(call, "saveTextFileResult", mimeType);
+    }
+
+    private void startSavePicker(PluginCall call, String callbackName, String mimeType) {
+        String content = call.getString("content");
+        if (content == null || content.isEmpty()) {
+            call.reject("Isi file kosong.");
+            return;
+        }
+        String requestedName = call.getString("fileName");
+        String safeName = requestedName == null ? "DuitKu-File" :
+            requestedName.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (safeName.trim().isEmpty()) safeName = "DuitKu-File";
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mimeType);
+        intent.putExtra(Intent.EXTRA_TITLE, safeName);
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivityForResult(call, intent, callbackName);
+    }
+
+    @PluginMethod
+    public void chooseBackupFile(PluginCall call) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
+            "application/json", "text/json", "text/plain", "application/octet-stream"
+        });
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivityForResult(call, intent, "openBackupResult");
+    }
+
+    @ActivityCallback
+    private void saveSpreadsheetResult(PluginCall call, ActivityResult result) {
+        finishSave(call, result);
+    }
+
+    @ActivityCallback
+    private void saveTextFileResult(PluginCall call, ActivityResult result) {
+        finishSave(call, result);
+    }
+
+    private void finishSave(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (result.getResultCode() != Activity.RESULT_OK ||
+            result.getData() == null || result.getData().getData() == null) {
+            JSObject cancelled = new JSObject();
+            cancelled.put("cancelled", true);
+            call.resolve(cancelled);
+            return;
+        }
+        Uri targetUri = result.getData().getData();
+        String content = call.getString("content");
+        if (content == null || content.isEmpty()) {
+            call.reject("Isi file kosong.");
+            return;
+        }
+        try (OutputStream output = getContext().getContentResolver().openOutputStream(targetUri, "w")) {
+            if (output == null) throw new IllegalStateException("Folder tujuan tidak dapat dibuka.");
+            output.write(content.getBytes(StandardCharsets.UTF_8));
+            output.flush();
+            JSObject saved = new JSObject();
+            saved.put("saved", true);
+            call.resolve(saved);
+        } catch (Exception error) {
+            call.reject("Gagal menyimpan file: " + error.getMessage(), error);
+        }
+    }
+
+    @ActivityCallback
+    private void openBackupResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (result.getResultCode() != Activity.RESULT_OK ||
+            result.getData() == null || result.getData().getData() == null) {
+            JSObject cancelled = new JSObject();
+            cancelled.put("cancelled", true);
+            call.resolve(cancelled);
+            return;
+        }
+        Uri sourceUri = result.getData().getData();
+        try (InputStream input = getContext().getContentResolver().openInputStream(sourceUri);
+             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            if (input == null) throw new IllegalStateException("File tidak dapat dibuka.");
+            byte[] chunk = new byte[8192];
+            int count;
+            int total = 0;
+            while ((count = input.read(chunk)) != -1) {
+                total += count;
+                if (total > MAX_BACKUP_BYTES) throw new IllegalArgumentException("File cadangan melebihi batas 15 MB.");
+                buffer.write(chunk, 0, count);
+            }
+            JSObject response = new JSObject();
+            response.put("content", new String(buffer.toByteArray(), StandardCharsets.UTF_8));
+            response.put("name", sourceUri.getLastPathSegment() == null ? "cadangan.json" : sourceUri.getLastPathSegment());
+            call.resolve(response);
+        } catch (Exception error) {
+            call.reject("Gagal membaca file cadangan: " + error.getMessage(), error);
+        }
+    }
+}\`;
+
 await writeFile(path.join(packageDir, "DuitKuExportPlugin.java"), exportPluginSource, "utf8");
 const xmlDir = path.join(resources, "xml");
 await mkdir(xmlDir, { recursive: true });
