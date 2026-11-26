@@ -55,10 +55,10 @@ Repository ini juga menyiapkan build Android menggunakan Capacitor 8.
 1. Buka tab **Actions** di GitHub.
 2. Pilih workflow **Build & Release DuitKu Android**.
 3. Klik **Run workflow**.
-4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.4.0`. Kosongkan input tersebut untuk hanya membuat artifact APK.
+4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.5.0`. Kosongkan input tersebut untuk hanya membuat artifact APK.
 5. Setelah workflow berhasil, unduh APK dari GitHub Release atau artifact `DuitKu-debug-apk`.
 
-Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.4.0**. Pemeriksa pembaruan memeriksa repository DuitKu dan mengambil HTML, CSS, serta JavaScript terbaru langsung di dalam aplikasi. Aplikasi tidak membuka halaman GitHub atau mengarahkan pengguna ke unduhan untuk pembaruan fitur web. Perubahan komponen Android native tetap memerlukan paket aplikasi.
+Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.5.0**. Pembaruan fitur dilakukan langsung dari dalam DuitKu: saat aplikasi dibuka, pemeriksa internal membaca manifest versi dan mengambil HTML, CSS, serta JavaScript terbaru tanpa membuka browser, halaman GitHub, atau meminta unduh APK. Pengguna juga dapat memeriksa dan memasang update melalui menu Laporan & Data. Pembaruan komponen Android native tetap membutuhkan paket aplikasi.
 
 **Catatan distribusi:** workflow saat ini menghasilkan APK debug agar mudah diuji. Ini belum merupakan paket produksi bertanda tangan permanen untuk Play Store. Kunci debug Android disimpan pada cache GitHub Actions agar build selanjutnya memakai sertifikat yang sama. Versi debug lama yang dibuat sebelum cache kunci tersedia mungkin perlu migrasi instalasi sekali; ekspor Excel terlebih dahulu sebagai cadangan.
 
