@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Isi versi rilis stabil, misalnya v1.6.0. Kosongkan untuk build APK tanpa menerbitkan release."
+        description: "Isi versi rilis stabil, misalnya v1.6.1. Kosongkan untuk build APK tanpa menerbitkan release."
         required: false
         type: string
         default: ""
@@ -133,7 +133,7 @@ jobs:
           fi
 
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Use a stable version such as v1.6.0"
+            echo "Use a stable version such as v1.6.1"
             exit 1
           fi
 
@@ -144,7 +144,7 @@ jobs:
 
           - Cadangkan seluruh transaksi ke JSON dan pulihkan cadangan dari pemilih file Android atau browser.
           - Data lokal yang tidak valid tidak lagi ditimpa diam-diam; aplikasi memberi peringatan dan menunggu pemulihan.
-          - Ekspor Excel memakai jembatan file Android yang diperkuat dan membersihkan karakter XML yang tidak valid.
+          - Ekspor Excel Android 10+ ditulis langsung ke Download/DuitKu lewat MediaStore; Android lama memakai pemilih folder. Karakter XML ilegal dibersihkan.
           - Riwayat dapat difilter berdasarkan transfer dan pencarian mencakup tanggal serta dompet.
           - Rasio sisa uang pada dashboard dibatasi agar sesuai dengan indikator melingkar.
           - Transfer antar-dompet tetap tidak dihitung sebagai pemasukan atau pengeluaran.

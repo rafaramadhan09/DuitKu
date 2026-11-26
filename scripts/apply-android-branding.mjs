@@ -97,8 +97,12 @@ await writeFile(path.join(packageDir, "MainActivity.java"), activitySource, "utf
 const exportPluginSource = `package com.rafaramadhan09.duitku;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
 import androidx.activity.result.ActivityResult;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -117,32 +121,93 @@ public class DuitKuExportPlugin extends Plugin {
 
     @PluginMethod
     public void shareSpreadsheet(PluginCall call) {
-        startSavePicker(call, "saveSpreadsheetResult", "application/vnd.ms-excel");
+        saveTextFile(call);
     }
 
     @PluginMethod
     public void saveTextFile(PluginCall call) {
-        String mimeType = call.getString("mimeType");
-        if (mimeType == null || mimeType.trim().isEmpty()) mimeType = "application/octet-stream";
-        startSavePicker(call, "saveTextFileResult", mimeType);
-    }
-
-    private void startSavePicker(PluginCall call, String callbackName, String mimeType) {
         String content = call.getString("content");
         if (content == null || content.isEmpty()) {
             call.reject("Isi file kosong.");
             return;
         }
-        String requestedName = call.getString("fileName");
-        String safeName = requestedName == null ? "DuitKu-File" :
-            requestedName.replaceAll("[^A-Za-z0-9._-]", "_");
-        if (safeName.trim().isEmpty()) safeName = "DuitKu-File";
+        String mimeType = call.getString("mimeType");
+        if (mimeType == null || mimeType.trim().isEmpty()) mimeType = "application/octet-stream";
+        String fileName = safeFileName(call.getString("fileName"));
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveIntoDownloads(call, fileName, mimeType, content);
+        } else {
+            startSavePicker(call, fileName, mimeType);
+        }
+    }
+
+    private String safeFileName(String requestedName) {
+        String fileName = requestedName == null ? "DuitKu-File" : requestedName;
+        fileName = fileName.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (fileName.trim().isEmpty()) fileName = "DuitKu-File";
+        return fileName;
+    }
+
+    private void saveIntoDownloads(PluginCall call, String fileName, String mimeType, String content) {
+        Uri targetUri = null;
+        try {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+            values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+            values.put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                Environment.DIRECTORY_DOWNLOADS + "/DuitKu"
+            );
+            values.put(MediaStore.MediaColumns.IS_PENDING, 1);
+
+            targetUri = getContext().getContentResolver().insert(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                values
+            );
+            if (targetUri == null) {
+                throw new IllegalStateException("Android tidak dapat membuat file di folder Download.");
+            }
+
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            try (OutputStream output = getContext().getContentResolver().openOutputStream(targetUri, "w")) {
+                if (output == null) {
+                    throw new IllegalStateException("Folder Download/DuitKu tidak dapat dibuka.");
+                }
+                output.write(bytes);
+                output.flush();
+            }
+
+            ContentValues completed = new ContentValues();
+            completed.put(MediaStore.MediaColumns.IS_PENDING, 0);
+            getContext().getContentResolver().update(targetUri, completed, null, null);
+
+            JSObject response = new JSObject();
+            response.put("saved", true);
+            response.put("fileName", fileName);
+            response.put("location", "Download/DuitKu/" + fileName);
+            response.put("uri", targetUri.toString());
+            response.put("bytes", bytes.length);
+            call.resolve(response);
+        } catch (Exception error) {
+            if (targetUri != null) {
+                try {
+                    getContext().getContentResolver().delete(targetUri, null, null);
+                } catch (Exception ignored) {
+                    // Keep the original write error for the caller.
+                }
+            }
+            call.reject("Gagal menyimpan file ke Download/DuitKu: " + error.getMessage(), error);
+        }
+    }
+
+    private void startSavePicker(PluginCall call, String fileName, String mimeType) {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimeType);
-        intent.putExtra(Intent.EXTRA_TITLE, safeName);
+        intent.putExtra(Intent.EXTRA_TITLE, fileName);
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivityForResult(call, intent, callbackName);
+        startActivityForResult(call, intent, "saveTextFileResult");
     }
 
     @PluginMethod
@@ -155,11 +220,6 @@ public class DuitKuExportPlugin extends Plugin {
         });
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivityForResult(call, intent, "openBackupResult");
-    }
-
-    @ActivityCallback
-    private void saveSpreadsheetResult(PluginCall call, ActivityResult result) {
-        finishSave(call, result);
     }
 
     @ActivityCallback
@@ -188,9 +248,11 @@ public class DuitKuExportPlugin extends Plugin {
             output.flush();
             JSObject saved = new JSObject();
             saved.put("saved", true);
+            saved.put("location", "Folder yang dipilih");
+            saved.put("uri", targetUri.toString());
             call.resolve(saved);
         } catch (Exception error) {
-            call.reject("Gagal menyimpan file: " + error.getMessage(), error);
+            call.reject("Gagal menulis file pada folder pilihan: " + error.getMessage(), error);
         }
     }
 

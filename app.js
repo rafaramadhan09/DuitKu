@@ -524,7 +524,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.6.0";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.6.1";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
@@ -929,7 +929,10 @@
       '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
       '<Worksheet ss:Name="Transaksi"><Table>' + rows + '</Table></Worksheet>' +
       '<Worksheet ss:Name="Ringkasan"><Table>' + summary + '</Table></Worksheet></Workbook>';
-    var fileName = "DuitKu-Laporan-" + localDateString() + ".xls";
+    var exportNow = new Date();
+    var exportTime = [exportNow.getHours(), exportNow.getMinutes(), exportNow.getSeconds()]
+      .map(function (part) { return String(part).padStart(2, "0"); }).join("");
+    var fileName = "DuitKu-Laporan-" + localDateString() + "-" + exportTime + ".xls";
     var fileBlob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
 
     try {
@@ -943,14 +946,10 @@
           throw new Error("Fitur penyimpanan Excel Android belum tersedia. Pasang versi aplikasi terbaru.");
         }
         var exportPlugin = capacitor.registerPlugin("DuitKuExport");
-        if (!exportPlugin || typeof exportPlugin.shareSpreadsheet !== "function") {
-          throw new Error("Jembatan ekspor Excel Android tidak ditemukan. Tutup lalu buka ulang aplikasi.");
+        if (!exportPlugin || typeof exportPlugin.saveTextFile !== "function") {
+          throw new Error("Fitur simpan Excel Android belum tersedia. Pasang DuitKu 1.6.1 atau yang lebih baru.");
         }
-        var saveMethod = exportPlugin.saveTextFile || exportPlugin.shareSpreadsheet;
-        if (typeof saveMethod !== "function") {
-          throw new Error("Fitur simpan file belum tersedia. Pasang APK DuitKu terbaru.");
-        }
-        var saveResult = await saveMethod.call(exportPlugin, {
+        var saveResult = await exportPlugin.saveTextFile({
           fileName: fileName,
           mimeType: "application/vnd.ms-excel",
           content: workbook
@@ -962,8 +961,9 @@
         if (!saveResult || saveResult.saved !== true) {
           throw new Error("Android belum mengonfirmasi penyimpanan file Excel.");
         }
-        report("File Excel berhasil disimpan ke folder yang kamu pilih.", false);
-        showToast("Laporan Excel berhasil disimpan.");
+        var savedLocation = saveResult.location || "Download/DuitKu";
+        report("File Excel tersimpan di " + savedLocation + ".", false);
+        showToast("Excel tersimpan di Download/DuitKu.");
         return;
       }
 
@@ -1012,7 +1012,7 @@
       var result = await plugin.saveTextFile({ fileName: fileName, mimeType: mimeType, content: content });
       if (result && result.cancelled) return "cancelled";
       if (!result || result.saved !== true) throw new Error("Android belum mengonfirmasi file tersimpan.");
-      return "saved";
+      return result.location ? "saved:" + result.location : "saved";
     }
     if (typeof File === "function" && navigator.share && typeof navigator.canShare === "function") {
       var file = new File([blob], fileName, { type: mimeType });
@@ -1079,7 +1079,8 @@
         var fileName = "DuitKu-Cadangan-" + localDateString() + ".json";
         var outcome = await saveTextDocument(fileName, "application/json", JSON.stringify(payload, null, 2));
         var message = outcome === "cancelled" ? "Pembuatan cadangan dibatalkan." :
-          outcome === "saved" ? "Cadangan berhasil disimpan ke folder pilihanmu." :
+          outcome.indexOf("saved:") === 0 ? "Cadangan tersimpan di " + outcome.slice(6) + "." :
+          outcome === "saved" ? "Cadangan tersimpan di Download/DuitKu." :
           outcome === "shared" ? "Cadangan siap dibagikan." : "Cadangan diunduh. Simpan file JSON di tempat aman.";
         if (backupFeedback) backupFeedback.textContent = message;
         showToast(message, false);
