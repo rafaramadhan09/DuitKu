@@ -94,7 +94,7 @@ const packageDir = path.join(androidRoot, "java", "com", "rafaramadhan09", "duit
 await mkdir(packageDir, { recursive: true });
 const activitySource = "package com.rafaramadhan09.duitku;\n\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(DuitKuExportPlugin.class);\n        super.onCreate(savedInstanceState);\n    }\n}\n";
 await writeFile(path.join(packageDir, "MainActivity.java"), activitySource, "utf8");
-const exportPluginSource = \`package com.rafaramadhan09.duitku;
+const exportPluginSource = `package com.rafaramadhan09.duitku;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -224,7 +224,7 @@ public class DuitKuExportPlugin extends Plugin {
             call.reject("Gagal membaca file cadangan: " + error.getMessage(), error);
         }
     }
-}\`;
+}`;
 
 await writeFile(path.join(packageDir, "DuitKuExportPlugin.java"), exportPluginSource, "utf8");
 const xmlDir = path.join(resources, "xml");
