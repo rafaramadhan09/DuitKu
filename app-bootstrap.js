@@ -31,7 +31,7 @@
 
   async function start() {
     var meta = document.querySelector('meta[name="duitku-version"]');
-    var localVersion = meta ? meta.content : "1.3.0";
+    var localVersion = meta ? meta.content : "1.4.0";
     try {
       var response = await fetch(ROOT + "index.html?ota=" + Date.now(), { cache: "no-store" });
       if (!response.ok) throw new Error("OTA server unavailable");
