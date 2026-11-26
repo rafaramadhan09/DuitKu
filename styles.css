@@ -1190,3 +1190,5 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
   .stats-strip .stat-card,.donut-chart{animation:none!important}
   .stat-card,.stat-meter i,.edit-button,.delete-button{transition:none!important}
 }
+
+.form-page-panel .cancel-edit-button{grid-column:1/-1}
