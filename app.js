@@ -310,9 +310,14 @@
     });
 
     document.getElementById("categoryTotal").textContent = money(overall);
-    var entries = Object.keys(totals).map(function (name) {
+    var allEntries = Object.keys(totals).map(function (name) {
       return { name: name, amount: totals[name] };
-    }).sort(function (a, b) { return b.amount - a.amount; }).slice(0, 5);
+    }).sort(function (a, b) { return b.amount - a.amount; });
+    var entries = allEntries.slice(0, 5);
+    if (allEntries.length > 5) {
+      var remainder = allEntries.slice(4).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      entries = allEntries.slice(0, 4).concat([{ name: "Lainnya", amount: remainder }]);
+    }
 
     if (!entries.length || overall <= 0) {
       container.innerHTML = '<p class="chart-empty">Belum ada pengeluaran bulan ini. Distribusi kategori akan muncul di sini.</p>';
