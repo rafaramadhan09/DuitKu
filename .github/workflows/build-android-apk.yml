@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Isi versi rilis stabil, misalnya v1.5.0. Kosongkan untuk build APK tanpa menerbitkan release."
+        description: "Isi versi rilis stabil, misalnya v1.5.1. Kosongkan untuk build APK tanpa menerbitkan release."
         required: false
         type: string
         default: ""
@@ -124,22 +124,22 @@ jobs:
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.release_version != '') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[publish-release]')) }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.5.0' || inputs.release_version }}
+          RELEASE_VERSION: ${{ github.event_name == 'push' && 'v1.5.1' || inputs.release_version }}
         run: |
           if [[ ! "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Use a stable version such as v1.5.0"
+            echo "Use a stable version such as v1.5.1"
             exit 1
           fi
 
           cat > release-notes.md <<'NOTES'
-          ## DuitKu 1.5.0
+          ## DuitKu 1.5.1
 
-          Tampilan forest-champagne yang lebih rapi, statistik interaktif, dan performa Android yang lebih ringan.
+          Tampilan forest-champagne yang lebih matang, ekspor Excel dengan pemilih folder Android, statistik berbentuk lingkaran, dan tata letak setiap halaman yang diperhalus.
 
           - Riwayat transaksi menyediakan tombol ubah dan hapus yang langsung terlihat di layar HP.
           - Transfer M-Banking ke Cash tetap menjadi perpindahan saldo, bukan pengeluaran.
-          - Ekspor Excel Android dapat dibagikan atau disimpan melalui menu Android.
-          - Dashboard memiliki grafik tren 6/12 bulan, diagram donat kategori, arus kas bersih, rata-rata pengeluaran, rasio sisa uang, dan jumlah transaksi.
+          - Ekspor Excel Android memakai pemilih dokumen sistem: pilih Download atau folder lain untuk menyimpan file .xls secara langsung.
+          - Dashboard memiliki grafik tren 6/12 bulan, diagram donat kategori, indikator statistik melingkar, arus kas bersih, rata-rata harian, rasio sisa uang, dan jumlah transaksi.
           - Font online dihapus, diganti font sistem agar startup lebih cepat dan menghemat data.
           - Mode Otomatis mendeteksi CPU/RAM; Mode Ringan mengurangi animasi, blur, shadow, dan efek dekoratif.
           - Pembaruan HTML/CSS/JavaScript dapat diperiksa dan dipasang langsung di dalam DuitKu tanpa membuka browser atau halaman eksternal.
