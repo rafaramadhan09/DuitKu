@@ -453,6 +453,31 @@
     return 0;
   }
 
+  // Compatibility bridge for installations whose bundled bootstrap predates the in-app updater API.
+  if (!window.DuitKuUpdater) {
+    window.DuitKuUpdater = {
+      check: async function () {
+        var response = await fetch("https://raw.githubusercontent.com/rafaramadhan09/DuitKu/main/update.json?check=" + Date.now(), {
+          method: "GET",
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error("Server update DuitKu belum dapat dijangkau.");
+        var manifest = await response.json();
+        if (!manifest || !parseVersion(manifest.version)) throw new Error("Manifest update DuitKu tidak valid.");
+        return {
+          version: manifest.version,
+          available: compareVersions(manifest.version, installedVersion) > 0,
+          message: manifest.message || "Fitur terbaru tersedia di dalam DuitKu."
+        };
+      },
+      apply: async function () {
+        // The legacy bootstrap re-checks the remote version during its next app start.
+        window.location.reload();
+        return { applied: true };
+      }
+    };
+  }
+
   async function checkForAppUpdate(silent) {
     if (!updateCheckButton || !updateStatus || !updateApplyButton) return;
     updateCheckButton.disabled = true;
