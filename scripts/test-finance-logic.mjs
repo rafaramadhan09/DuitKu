@@ -116,6 +116,7 @@ assert.ok(update.version === "1.6.0", "UI refresh release version is 1.6.0");
 assert.ok(css.includes("DuitKu 1.6.0 — unified premium interface"), "Unified page styling is included");
 assert.ok(css.includes(".table-wrap tbody tr{"), "Mobile history cards remain responsive");
 assert.ok(css.includes(".form-page-panel form{display:flex;flex-direction:column"), "Transaction form uses a readable vertical layout");
+assert.ok(css.includes(".mobile-nav{\n    display:flex;"), "Mobile navigation remains visible after the visual refresh");
 assert.ok(app.includes('nav.setAttribute("aria-current", "page")'), "Navigation announces the selected page accessibly");
 assert.ok(app.includes('item.setAttribute("aria-pressed", selected ? "true" : "false")'), "Chart range and history filters expose their active state");
 assert.ok(!app.includes('document.getElementById("transactionName").focus();\\n  });'), "Saving a form does not focus an input inside the now-hidden page");
