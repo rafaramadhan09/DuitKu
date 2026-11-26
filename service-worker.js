@@ -1,4 +1,4 @@
-const CACHE_NAME = "duitku-static-v12";
+const CACHE_NAME = "duitku-static-v13";
 const APP_SHELL = [
   "./",
   "./index.html",
