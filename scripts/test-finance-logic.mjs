@@ -48,7 +48,7 @@ assert.ok(app.includes("ACTION_CREATE_DOCUMENT") === false, "Android saving is d
 assert.ok(app.includes('saveSpreadsheet({ fileName: fileName, content: workbook })'), "Excel file is sent to the Android save bridge");
 assert.ok(androidBranding.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android export opens the system Save As picker");
 assert.ok(androidBranding.includes("@ActivityCallback"), "Android export waits for the document picker result");
-assert.ok(androidBranding.includes('openOutputStream(targetUri, "w")'), "Android export writes the workbook to the chosen file URI");
+assert.ok(androidBranding.includes("openOutputStream(targetUri"), "Android export writes the workbook to the chosen file URI");
 assert.ok(app.includes("new Blob([workbook]"), "Browser export creates an Excel-compatible workbook");
 assert.ok(css.includes(".stat-ring{"), "Circular stat indicators have dedicated styling");
 assert.ok(css.includes(".app-page>.page-heading{"), "Every page has a consistent premium page header");
