@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
+500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
   color-scheme: light;
@@ -21,7 +21,7 @@ body {
   margin: 0;
   background: var(--canvas);
   color: var(--ink);
-  font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 14px;
 }
 button, input, select, textarea { font: inherit; }
@@ -45,7 +45,7 @@ button { cursor: pointer; }
   align-items: center;
   gap: 10px;
   margin: 0 0 56px 5px;
-  font-family: 'Manrope', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -1px;
@@ -146,7 +146,7 @@ button { cursor: pointer; }
 }
 .eyebrow { margin: 0 0 8px; color: var(--green); font-size: 9px; font-weight: 800; letter-spacing: 1.6px; }
 h1, h2, p { margin-top: 0; }
-h1 { margin-bottom: 7px; font-family: 'Manrope', sans-serif; font-size: clamp(23px, 2.3vw, 29px); font-weight: 800; letter-spacing: -1.2px; }
+h1 { margin-bottom: 7px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: clamp(23px, 2.3vw, 29px); font-weight: 800; letter-spacing: -1.2px; }
 .wave { color: #e4ad50; font-size: 20px; }
 .page-subtitle { margin: 0; color: #849087; font-size: 12px; }
 .button {
@@ -184,14 +184,14 @@ h1 { margin-bottom: 7px; font-family: 'Manrope', sans-serif; font-size: clamp(23
 .balance-icon { background: rgba(255,255,255,.17); color: white; }
 .income-icon { background: var(--green-soft); color: var(--green); }
 .expense-icon { background: var(--red-soft); color: var(--red); }
-.summary-value { overflow: hidden; margin: 13px 0 9px; font-family: 'Manrope', sans-serif; font-size: clamp(20px, 2.15vw, 27px); font-weight: 800; letter-spacing: -.9px; text-overflow: ellipsis; white-space: nowrap; }
+.summary-value { overflow: hidden; margin: 13px 0 9px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: clamp(20px, 2.15vw, 27px); font-weight: 800; letter-spacing: -.9px; text-overflow: ellipsis; white-space: nowrap; }
 .summary-foot { display: flex; align-items: center; gap: 7px; margin: 0; color: rgba(255,255,255,.76); font-size: 10px; }
 .muted-foot { color: #9ba69e; }
 .insights-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; margin-top: 16px; }
 .panel { min-width: 0; border: 1px solid var(--line); border-radius: 15px; background: #fff; box-shadow: var(--shadow); }
 .cashflow-panel, .category-panel { min-height: 265px; padding: 20px 21px 18px; }
 .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
-h2 { margin: 0 0 5px; font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -.25px; }
+h2 { margin: 0 0 5px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; font-weight: 800; letter-spacing: -.25px; }
 .panel-subtitle { margin: 0; color: #96a198; font-size: 10px; }
 .mini-badge { padding: 6px 8px; border-radius: 6px; background: #f3f7f3; color: #839087; font-size: 8px; font-weight: 800; letter-spacing: .6px; }
 .chart-legend { display: flex; gap: 17px; margin: 22px 0 9px; color: #859188; font-size: 9px; }
@@ -395,7 +395,7 @@ td { padding: 12px 13px; border-top: 1px solid #f0f3f0; color: #7d8981; font-siz
   .breadcrumb::before {
     content: "DuitKu";
     color: #1a2d22;
-    font-family: 'Manrope', sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 19px;
     font-weight: 800;
     letter-spacing: -.8px;
@@ -1036,7 +1036,7 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
 .wallet-card:after{content:"";position:absolute;width:200px;height:200px;border-radius:50%;border:1px solid rgba(255,255,255,.12);right:-64px;top:-92px;box-shadow:0 0 0 18px rgba(255,255,255,.025),0 0 0 42px rgba(255,255,255,.025);pointer-events:none}
 .bank-wallet{background:linear-gradient(125deg,#123d2e,#23684a 60%,#8a754f)}.cash-wallet{background:linear-gradient(125deg,#293d37,#68766b 62%,#b4a17c)}
 .wallet-card-top{display:flex;align-items:center;justify-content:space-between;letter-spacing:.15em;font-size:10px;font-weight:800;opacity:.84}.wallet-chip{display:grid;place-items:center;width:34px;height:34px;border:1px solid #ffffff30;border-radius:11px;background:#ffffff12;font-size:18px}
-.wallet-card p{margin:18px 0 5px;font-size:12px;opacity:.8}.wallet-card strong{font-family:Manrope,sans-serif;font-size:clamp(22px,3vw,30px);letter-spacing:-.04em}.wallet-card-foot{display:block;margin-top:12px;font-size:11px;opacity:.65}
+.wallet-card p{margin:18px 0 5px;font-size:12px;opacity:.8}.wallet-card strong{font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;font-size:clamp(22px,3vw,30px);letter-spacing:-.04em}.wallet-card-foot{display:block;margin-top:12px;font-size:11px;opacity:.65}
 .wallet-page-cards{margin-top:8px}.wallet-note{padding:24px}.wallet-note h2{margin:0 0 10px}.wallet-note p{line-height:1.8;margin-bottom:18px}
 .app-page .form-page-panel{max-width:680px}.form-page-panel form{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.form-page-panel .type-switch,.form-page-panel .submit-button,.form-page-panel .form-note,.form-page-panel .form-feedback{grid-column:1/-1}.form-page-panel .field-label:nth-of-type(1),#transactionName,.field-label[for="transactionWallet"],#transactionWallet,.field-label[for="transactionCategory"],#transactionCategory{grid-column:1/-1}
 .wallet-pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#edf3ef;color:#365b48;font-size:11px;font-weight:700;white-space:nowrap}
@@ -1109,7 +1109,7 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
 .stat-card{position:relative;min-width:0;padding:16px 18px;border:1px solid rgba(32,73,51,.09);border-radius:16px;background:linear-gradient(145deg,#fff,#fbfcfa);box-shadow:0 8px 24px rgba(20,47,32,.045);transition:transform .28s ease,box-shadow .28s ease}
 .stat-card:hover{transform:translateY(-2px);box-shadow:0 13px 28px rgba(20,47,32,.075)}
 .stat-card>span{display:block;color:#829087;font-size:10px;font-weight:700;letter-spacing:.02em}
-.stat-card>strong{display:block;margin:9px 0 5px;color:#254b37;font-family:Manrope,sans-serif;font-size:clamp(17px,1.9vw,22px);font-weight:800;letter-spacing:-.045em;overflow-wrap:anywhere}
+.stat-card>strong{display:block;margin:9px 0 5px;color:#254b37;font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;font-size:clamp(17px,1.9vw,22px);font-weight:800;letter-spacing:-.045em;overflow-wrap:anywhere}
 .stat-card>small{display:block;color:#9aa49d;font-size:9px;line-height:1.5}
 .stat-net{background:linear-gradient(135deg,#f8faf7,#f1f5f0);border-color:#e5ebe4}
 .stat-net>strong{color:#245f45}
@@ -1124,7 +1124,7 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
 .donut-chart{display:grid;width:min(100%,170px);aspect-ratio:1;place-self:center;place-items:center;border-radius:50%;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 9px 22px rgba(26,55,39,.07);animation:donutReveal .75s cubic-bezier(.2,.8,.2,1) both}
 .donut-hole{display:flex;width:67%;height:67%;align-items:center;justify-content:center;flex-direction:column;border-radius:50%;background:#fff;box-shadow:0 2px 12px rgba(18,49,31,.045);text-align:center}
 .donut-hole span,.donut-hole small{color:#98a39a;font-size:9px}
-.donut-hole strong{max-width:100%;overflow:hidden;margin:4px 0;color:#294c38;font-family:Manrope,sans-serif;font-size:clamp(11px,1.5vw,15px);letter-spacing:-.04em;text-overflow:ellipsis;white-space:nowrap}
+.donut-hole strong{max-width:100%;overflow:hidden;margin:4px 0;color:#294c38;font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;font-size:clamp(11px,1.5vw,15px);letter-spacing:-.04em;text-overflow:ellipsis;white-space:nowrap}
 .donut-legend{display:grid;gap:11px;min-width:0}
 .donut-legend-item{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:8px;row-gap:2px;font-size:10px}
 .donut-swatch{width:8px;height:8px;border-radius:3px;grid-row:span 2}
@@ -1192,3 +1192,236 @@ tbody tr:hover .transaction-symbol { transform: rotate(-6deg) scale(1.06); box-s
 }
 
 .form-page-panel .cancel-edit-button{grid-column:1/-1}
+
+/* DuitKu 1.5.0 — refined forest & champagne interface */
+:root{
+  --ink:#16291f;
+  --muted:#7c8980;
+  --line:#e5ebe5;
+  --canvas:#f3f6f2;
+  --green:#174b36;
+  --green-dark:#103b2b;
+  --gold:#c7a46a;
+  --shadow:0 12px 34px rgba(17,48,32,.052);
+}
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(ellipse at 88% 0,rgba(212,227,211,.35),transparent 31rem),
+    linear-gradient(180deg,#f7f9f6 0%,#f2f5f1 100%);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+h1,h2,.summary-value,.wallet-card strong,.stat-card strong{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:-.035em;
+}
+.topbar{border-bottom-color:#e7ede6}
+.breadcrumb strong{color:#294a37}
+.page-heading h1{color:#193627;letter-spacing:-.045em}
+.eyebrow{color:#a1824c;letter-spacing:.17em}
+.summary-card{
+  border-color:#e6ece5;
+  background:linear-gradient(150deg,#fff,#fbfcfa);
+  box-shadow:0 7px 23px rgba(17,48,32,.045),inset 0 1px 0 #fff;
+}
+.balance-card{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  border-color:#164a34;
+  background:linear-gradient(125deg,#102f23 0%,#174b35 55%,#37634a 100%);
+  box-shadow:0 15px 32px rgba(15,54,35,.16),inset 0 1px 0 rgba(255,255,255,.13);
+}
+.balance-card:after{
+  position:absolute;
+  z-index:-1;
+  top:-92px;
+  right:-52px;
+  width:230px;
+  height:230px;
+  border:1px solid rgba(224,198,147,.22);
+  border-radius:50%;
+  box-shadow:0 0 0 17px rgba(224,198,147,.035),0 0 0 43px rgba(224,198,147,.025);
+  content:"";
+  pointer-events:none;
+}
+.balance-card .summary-icon{background:rgba(220,195,145,.16);color:#e4cb97}
+.balance-card .summary-value{color:#fff;font-size:clamp(25px,3vw,34px)}
+.balance-card .summary-foot{color:rgba(255,255,255,.76)}
+.summary-card:not(.balance-card){border-radius:18px}
+.stat-card{
+  border-color:#e6ebe4;
+  background:linear-gradient(145deg,#fff,#fafbf8);
+  box-shadow:0 7px 22px rgba(17,48,32,.04);
+}
+.stat-card>span{color:#89958b;font-size:10px;letter-spacing:.035em}
+.stat-card>strong{color:#244733}
+.stat-net{background:linear-gradient(135deg,#edf4ed,#f8faf6);border-color:#dfe9df}
+.stat-net>strong{color:#1b5a3b}
+.stat-rate .stat-meter{background:#e9eee8}
+.stat-rate .stat-meter i{background:linear-gradient(90deg,#b79a66,#1f6a47)}
+.stat-activity{background:linear-gradient(145deg,#fbfaf5,#fff);border-color:#eee8d9}
+.stat-activity>strong{color:#866c42}
+.wallet-card{
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 13px 27px rgba(14,43,28,.12);
+}
+.bank-wallet{background:linear-gradient(125deg,#102f23 0%,#20553b 62%,#8a7651 145%)}
+.cash-wallet{background:linear-gradient(125deg,#293c33 0%,#607568 64%,#b29a70 145%)}
+.wallet-card:after{border-color:rgba(236,215,174,.19)}
+.wallet-chip{border-color:rgba(236,215,174,.28);color:#e9d3a5}
+.panel{
+  border-color:#e5ebe4;
+  background:linear-gradient(150deg,#fff,#fdfefc);
+  box-shadow:0 9px 28px rgba(17,48,32,.045);
+}
+.cashflow-panel,.category-panel{padding:22px}
+.panel-heading h2{color:#213c2d;letter-spacing:-.025em}
+.panel-subtitle{color:#8b978d}
+.chart-range{
+  display:flex;
+  flex:0 0 auto;
+  gap:3px;
+  padding:3px;
+  border:1px solid #e8ede7;
+  border-radius:10px;
+  background:#f7f9f6;
+}
+.chart-range-button{
+  min-width:40px;
+  min-height:27px;
+  padding:0 8px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:#89958b;
+  font-size:9px;
+  font-weight:750;
+}
+.chart-range-button.active{
+  background:#fff;
+  color:#28563c;
+  box-shadow:0 2px 7px rgba(27,69,43,.09);
+}
+.trend-chart{max-height:210px}
+.donut-chart{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 8px 18px rgba(26,55,39,.06);
+}
+.donut-hole{box-shadow:0 1px 8px rgba(18,49,31,.035)}
+.donut-legend-item strong{font-variant-numeric:tabular-nums}
+.quick-panel{
+  border-color:#e5ebe4;
+  background:linear-gradient(120deg,#fff,#f7faf6);
+}
+.button-primary{
+  background:linear-gradient(135deg,#1d6846,#123f2d)!important;
+  box-shadow:0 6px 16px rgba(21,83,50,.15)!important;
+}
+.button-primary:hover{background:linear-gradient(135deg,#267451,#123f2d)!important}
+.app-update-panel{
+  background:linear-gradient(145deg,#fff,#f8faf6);
+}
+.update-status{color:#365943}
+.performance-panel{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(190px,.55fr);
+  align-items:center;
+  gap:12px 24px;
+  margin-top:16px;
+  padding:21px 23px;
+}
+.performance-copy h2{margin:0 0 7px;font-size:15px;color:#244332}
+.performance-copy .eyebrow{margin-bottom:6px}
+.performance-copy .panel-subtitle{max-width:60ch;line-height:1.7}
+.performance-select-label{
+  display:grid;
+  gap:7px;
+  color:#758278;
+  font-size:10px;
+  font-weight:750;
+}
+.performance-select-label .field-input{
+  width:100%;
+  min-height:42px;
+  border-color:#e3e9e2;
+  border-radius:11px;
+  background:#fbfcfa;
+  color:#34523f;
+  font-size:11px;
+}
+.performance-status{
+  grid-column:1/-1;
+  margin:0;
+  padding-top:10px;
+  border-top:1px solid #edf1ec;
+  color:#8a968d;
+  font-size:10px;
+  line-height:1.55;
+}
+.app-update-panel:before{border-color:rgba(199,164,106,.14)}
+.app-update-icon{
+  background:linear-gradient(145deg,#f8f5ec,#eee7d7)!important;
+  color:#93764a!important;
+}
+.delete-button{
+  border-color:#f0ded9;
+  background:#fff8f6;
+  color:#aa5d52;
+}
+.edit-button{
+  border-color:#e3eae3;
+  background:#f8faf7;
+  color:#46674f;
+}
+@media(max-width:760px){
+  .stats-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats-strip .stat-card:last-child{grid-column:auto}
+  .stat-card{min-height:105px}
+  .performance-panel{grid-template-columns:1fr;gap:14px;padding:17px}
+  .performance-status{grid-column:1}
+  .chart-range-button{min-width:36px}
+  .cashflow-panel,.category-panel{padding:17px}
+  .balance-card .summary-value{font-size:clamp(25px,7vw,32px)}
+}
+@media(max-width:380px){
+  .stat-card{padding:12px 11px}
+  .stat-card>strong{font-size:16px}
+  .chart-range-button{min-width:32px;padding:0 6px}
+}
+
+/* Optional low-power mode: keep layout and charts, remove costly visual effects. */
+html.lite-mode,
+html.lite-mode body{background:#f3f6f2!important;scroll-behavior:auto!important}
+html.lite-mode *,
+html.lite-mode *::before,
+html.lite-mode *::after{
+  animation:none!important;
+  transition:none!important;
+  filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+html.lite-mode .sidebar{background:#fff!important;box-shadow:none!important}
+html.lite-mode .mobile-nav{background:#fff!important;box-shadow:0 -2px 8px rgba(20,50,32,.05)!important}
+html.lite-mode .brand-mark::after,
+html.lite-mode .wallet-card::before,
+html.lite-mode .wallet-card:after,
+html.lite-mode .balance-card:after,
+html.lite-mode .button::after{display:none!important}
+html.lite-mode .summary-card,
+html.lite-mode .stat-card,
+html.lite-mode .panel,
+html.lite-mode .wallet-card{
+  box-shadow:0 2px 8px rgba(20,50,32,.045)!important;
+}
+html.lite-mode .summary-card:hover,
+html.lite-mode .panel:hover,
+html.lite-mode .wallet-card:hover,
+html.lite-mode .button:hover,
+html.lite-mode .nav-link:hover{transform:none!important}
+html.lite-mode .trend-chart circle{filter:none!important}
+html.lite-mode .app-page,
+html.lite-mode .app-page.active{animation:none!important;filter:none!important}
+@media(prefers-reduced-motion:reduce){
+  .wallet-card::before,.brand-mark::after,.app-update-icon{animation:none!important}
+}
