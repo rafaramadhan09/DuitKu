@@ -17,6 +17,8 @@
     maximumFractionDigits: 0
   });
 
+  var storageLoadError = "";
+  var rawTransactionsSnapshot = null;
   var transactions = loadTransactions();
   var activeFilter = "all";
   var searchTerm = "";
@@ -79,46 +81,121 @@
     });
   }
 
+  function escapeXMLText(value) {
+    return String(value == null ? "" : value)
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  function sanitizeTransactionRecord(item, usedIds) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    var id = typeof item.id === "string" ? item.id.trim() : "";
+    var type = item.type;
+    var name = typeof item.name === "string" ? item.name.trim() : "";
+    var category = typeof item.category === "string" ? item.category.trim() : "";
+    var amount = Number(item.amount);
+    if (!id || id.length > 128 || (usedIds && usedIds.has(id)) ||
+        (type !== "income" && type !== "expense" && type !== "transfer") ||
+        !name || name.length > 180 || !category || category.length > 80 ||
+        !Number.isSafeInteger(amount) || amount <= 0 || !isValidDateString(item.date)) {
+      return null;
+    }
+    var wallet = item.wallet === "cash" ? "cash" : "bank";
+    var normalized = {
+      id: id,
+      type: type,
+      name: name,
+      amount: amount,
+      category: category,
+      wallet: wallet,
+      date: item.date,
+      note: typeof item.note === "string" ? item.note.slice(0, 2000) : ""
+    };
+    if (type === "transfer") {
+      var fromWallet = item.fromWallet;
+      var toWallet = item.toWallet;
+      if ((fromWallet !== "bank" && fromWallet !== "cash") ||
+          (toWallet !== "bank" && toWallet !== "cash") ||
+          fromWallet === toWallet) return null;
+      normalized.fromWallet = fromWallet;
+      normalized.toWallet = toWallet;
+      normalized.wallet = fromWallet;
+    }
+    if (usedIds) usedIds.add(id);
+    return normalized;
+  }
+
+  function normalizeBackupTransactions(payload) {
+    var items = Array.isArray(payload) ? payload :
+      (payload && Array.isArray(payload.transactions) ? payload.transactions : null);
+    if (!items) throw new Error("Format cadangan tidak dikenali. Pilih file backup DuitKu (.json).");
+    if (items.length > 50000) throw new Error("Cadangan berisi terlalu banyak transaksi (maksimal 50.000).");
+    var usedIds = new Set();
+    var normalized = [];
+    for (var i = 0; i < items.length; i++) {
+      var item = sanitizeTransactionRecord(items[i], usedIds);
+      if (!item) {
+        throw new Error("Data transaksi ke-" + (i + 1) + " tidak valid atau memiliki ID duplikat. Data lama tidak diubah.");
+      }
+      normalized.push(item);
+    }
+    return normalized;
+  }
+
   function loadTransactions() {
     try {
       var saved = localStorage.getItem(STORAGE_KEY);
-      var parsed = saved ? JSON.parse(saved) : [];
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter(function (item) {
-        return item && typeof item.id === "string" && item.id.length > 0 &&
-          (item.type === "income" || item.type === "expense" || item.type === "transfer") &&
-          (item.type !== "transfer" || (
-            (item.fromWallet === "bank" || item.fromWallet === "cash") &&
-            (item.toWallet === "bank" || item.toWallet === "cash") &&
-            item.fromWallet !== item.toWallet
-          )) &&
-          typeof item.name === "string" && item.name.trim().length > 0 &&
-          Number.isSafeInteger(Number(item.amount)) && Number(item.amount) > 0 &&
-          isValidDateString(item.date) &&
-          typeof item.category === "string" && item.category.trim().length > 0;
-      }).map(function (item) {
-        item.amount = Number(item.amount);
-        item.wallet = item.wallet === "cash" ? "cash" : "bank";
-        if (item.type === "transfer") {
-          item.fromWallet = item.fromWallet === "cash" ? "cash" : "bank";
-          item.toWallet = item.toWallet === "cash" ? "cash" : "bank";
-          item.wallet = item.fromWallet;
-        }
-        item.note = typeof item.note === "string" ? item.note : "";
-        return item;
+      rawTransactionsSnapshot = saved;
+      if (!saved) return [];
+      var parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) throw new Error("Bentuk data bukan daftar transaksi.");
+      var usedIds = new Set();
+      var result = [];
+      var rejected = 0;
+      parsed.forEach(function (item) {
+        var normalized = sanitizeTransactionRecord(item, usedIds);
+        if (normalized) result.push(normalized);
+        else rejected++;
       });
-    } catch (error) { return []; }
+      if (rejected > 0) {
+        storageLoadError = rejected + " transaksi lokal tidak dapat dibaca. Data asli dipertahankan; pulihkan dari file cadangan sebelum mengubah transaksi.";
+      }
+      return result;
+    } catch (error) {
+      storageLoadError = "Data transaksi lokal tidak dapat dibaca. DuitKu menahan penyimpanan agar data lama tidak tertimpa. Pulihkan dari file cadangan JSON.";
+      return [];
+    }
   }
 
-  function saveTransactions() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-      return true;
-    } catch (error) {
-      showFeedback("Penyimpanan browser penuh atau tidak tersedia.", true);
-      showToast("Data belum tersimpan. Periksa ruang penyimpanan perangkat.", true);
+  function saveTransactions(allowRecovery) {
+    if (storageLoadError && allowRecovery !== true) {
+      showStorageWarning();
+      showFeedback("Penyimpanan ditahan agar data lama tidak tertimpa. Pulihkan file cadangan terlebih dahulu.", true);
+      showToast("Data belum disimpan. Pulihkan cadangan terlebih dahulu.", true);
       return false;
     }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      storageLoadError = "";
+      rawTransactionsSnapshot = null;
+      showStorageWarning();
+      return true;
+    } catch (error) {
+      showFeedback("Penyimpanan perangkat penuh atau tidak tersedia. Perubahan dibatalkan.", true);
+      showToast("Data belum tersimpan. Kosongkan ruang lalu coba lagi.", true);
+      return false;
+    }
+  }
+
+  function showStorageWarning() {
+    var warning = document.getElementById("storageWarning");
+    if (!warning) return;
+    warning.hidden = !storageLoadError;
+    warning.textContent = storageLoadError
+      ? storageLoadError + " Jangan hapus data aplikasi. Impor cadangan yang masih tersedia untuk memulihkan."
+      : "";
   }
 
   function showFeedback(message, isError) {
@@ -224,7 +301,8 @@
       netNode.classList.toggle("is-negative", net < 0);
     }
     if (avgNode) avgNode.textContent = money(totals.expense / elapsedDays);
-    if (rateNode) rateNode.textContent = totals.income > 0 ? Math.round(rate) + "%" : "—";
+    if (rateNode) rateNode.textContent = totals.income > 0
+      ? Math.round(Math.max(0, Math.min(100, rate))) + "%" : "—";
     if (rateMeter) rateMeter.style.width = Math.max(0, Math.min(100, rate)) + "%";
     if (netFoot) netFoot.textContent = net >= 0 ? "Arus kas bulan ini positif" : "Pengeluaran melebihi pemasukan";
     if (countNode) countNode.textContent = String(monthTransactionCount);
@@ -390,7 +468,12 @@
       return b.date.localeCompare(a.date) || b.id.localeCompare(a.id);
     }).filter(function (item) {
       var matchesType = activeFilter === "all" || item.type === activeFilter;
-      var text = (item.name + " " + item.category + " " + (item.note || "")).toLowerCase();
+      var walletText = item.type === "transfer"
+        ? (item.fromWallet === "cash" ? "cash" : "m-banking") + " " + (item.toWallet === "cash" ? "cash" : "m-banking")
+        : (item.wallet === "cash" ? "cash" : "m-banking");
+      var typeText = item.type === "income" ? "pemasukan masuk income" :
+        item.type === "expense" ? "pengeluaran keluar expense" : "transfer pindah";
+      var text = [item.name, item.category, item.note || "", item.date, walletText, typeText].join(" ").toLowerCase();
       return matchesType && text.indexOf(searchTerm) !== -1;
     });
 
@@ -434,13 +517,14 @@
   }
 
   function renderAll() {
+    showStorageWarning();
     renderSummary();
     renderCashflow();
     renderCategories();
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.1";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.2";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
@@ -759,7 +843,7 @@
       return;
     }
 
-    if (!window.confirm('Hapus transaksi "' + selected.name + '" senilai ' + money(selected.amount) + '?\\nSaldo dompet dan statistik akan dihitung ulang.')) return;
+    if (!window.confirm('Hapus transaksi "' + selected.name + '" senilai ' + money(selected.amount) + '?\nSaldo dompet dan statistik akan dihitung ulang.')) return;
     var previous = transactions.slice();
     transactions = transactions.filter(function (item) { return item.id !== id; });
     if (!saveTransactions()) {
@@ -785,9 +869,7 @@
     }
 
     function xml(value) {
-      return String(value == null ? "" : value)
-        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      return escapeXMLText(value);
     }
     function cell(value, type) {
       return "<Cell><Data ss:Type=\"" + (type || "String") + "\">" +
@@ -827,7 +909,7 @@
       "<Row>" + cell("Total Pemasukan") + cell(totalIncome, "Number") + "</Row>" +
       "<Row>" + cell("Total Pengeluaran") + cell(totalExpense, "Number") + "</Row>" +
       "<Row>" + cell("Total Transfer") + cell(totalTransfer, "Number") + "</Row>";
-    var workbook = '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>' +
+    var workbook = '\uFEFF' + '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>' +
       '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
       '<Worksheet ss:Name="Transaksi"><Table>' + rows + '</Table></Worksheet>' +
       '<Worksheet ss:Name="Ringkasan"><Table>' + summary + '</Table></Worksheet></Workbook>';
@@ -848,7 +930,15 @@
         if (!exportPlugin || typeof exportPlugin.shareSpreadsheet !== "function") {
           throw new Error("Jembatan ekspor Excel Android tidak ditemukan. Tutup lalu buka ulang aplikasi.");
         }
-        var saveResult = await exportPlugin.shareSpreadsheet({ fileName: fileName, content: workbook });
+        var saveMethod = exportPlugin.saveTextFile || exportPlugin.shareSpreadsheet;
+        if (typeof saveMethod !== "function") {
+          throw new Error("Fitur simpan file belum tersedia. Pasang APK DuitKu terbaru.");
+        }
+        var saveResult = await saveMethod.call(exportPlugin, {
+          fileName: fileName,
+          mimeType: "application/vnd.ms-excel",
+          content: workbook
+        });
         if (saveResult && saveResult.cancelled) {
           report("Penyimpanan dibatalkan. File belum dibuat.", false);
           return;
@@ -893,6 +983,157 @@
       report(message, true);
     }
   });
+
+  async function saveTextDocument(fileName, mimeType, content) {
+    var blob = new Blob([content], { type: mimeType + ";charset=utf-8" });
+    var capacitor = window.Capacitor;
+    var isNative = Boolean(capacitor &&
+      typeof capacitor.isNativePlatform === "function" && capacitor.isNativePlatform());
+    if (isNative) {
+      if (typeof capacitor.registerPlugin !== "function") throw new Error("Jembatan file Android belum tersedia. Pasang APK terbaru.");
+      var plugin = capacitor.registerPlugin("DuitKuExport");
+      if (!plugin || typeof plugin.saveTextFile !== "function") throw new Error("Fitur backup Android belum tersedia. Pasang APK terbaru.");
+      var result = await plugin.saveTextFile({ fileName: fileName, mimeType: mimeType, content: content });
+      if (result && result.cancelled) return "cancelled";
+      if (!result || result.saved !== true) throw new Error("Android belum mengonfirmasi file tersimpan.");
+      return "saved";
+    }
+    if (typeof File === "function" && navigator.share && typeof navigator.canShare === "function") {
+      var file = new File([blob], fileName, { type: mimeType });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: "Cadangan DuitKu", files: [file] });
+        return "shared";
+      }
+    }
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 15000);
+    return "downloaded";
+  }
+
+  async function restoreBackupText(text) {
+    var parsed;
+    try {
+      parsed = JSON.parse(String(text || "").replace(/^\uFEFF/, ""));
+    } catch (error) {
+      throw new Error("File cadangan bukan JSON yang valid. Data yang tersimpan tidak diubah.");
+    }
+    var restored = normalizeBackupTransactions(parsed);
+    if (!window.confirm("Pulihkan " + restored.length + " transaksi dari cadangan? Data transaksi saat ini akan diganti dengan isi cadangan.")) return false;
+    var previousTransactions = transactions;
+    var previousStorageError = storageLoadError;
+    transactions = restored;
+    if (!saveTransactions(true)) {
+      transactions = previousTransactions;
+      storageLoadError = previousStorageError;
+      showStorageWarning();
+      throw new Error("Cadangan belum tersimpan. Data sebelumnya tetap dipakai.");
+    }
+    resetTransactionForm();
+    renderAll();
+    switchPage("home");
+    showToast("Cadangan berhasil dipulihkan: " + restored.length + " transaksi.");
+    var backupFeedback = document.getElementById("backupFeedback");
+    if (backupFeedback) backupFeedback.textContent = "Pemulihan berhasil. " + restored.length + " transaksi sudah dimuat.";
+    return true;
+  }
+
+  var backupExportButton = document.getElementById("backupExportButton");
+  var backupImportButton = document.getElementById("backupImportButton");
+  var backupFileInput = document.getElementById("backupFileInput");
+  if (backupExportButton) {
+    backupExportButton.addEventListener("click", async function () {
+      backupExportButton.disabled = true;
+      var backupFeedback = document.getElementById("backupFeedback");
+      try {
+        var payload = {
+          app: "DuitKu",
+          formatVersion: 1,
+          exportedAt: new Date().toISOString(),
+          transactionCount: transactions.length,
+          transactions: transactions,
+          recoverySnapshot: storageLoadError ? rawTransactionsSnapshot : null
+        };
+        var fileName = "DuitKu-Cadangan-" + localDateString() + ".json";
+        var outcome = await saveTextDocument(fileName, "application/json", JSON.stringify(payload, null, 2));
+        var message = outcome === "cancelled" ? "Pembuatan cadangan dibatalkan." :
+          outcome === "saved" ? "Cadangan berhasil disimpan ke folder pilihanmu." :
+          outcome === "shared" ? "Cadangan siap dibagikan." : "Cadangan diunduh. Simpan file JSON di tempat aman.";
+        if (backupFeedback) backupFeedback.textContent = message;
+        showToast(message, false);
+      } catch (error) {
+        var message = error && error.message ? error.message : "Cadangan belum berhasil dibuat.";
+        if (backupFeedback) backupFeedback.textContent = message;
+        showToast(message, true);
+      } finally {
+        backupExportButton.disabled = false;
+      }
+    });
+  }
+
+  async function readBackupFile(file) {
+    if (file && typeof file.text === "function") return file.text();
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || "")); };
+      reader.onerror = function () { reject(new Error("File cadangan tidak dapat dibaca.")); };
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
+  if (backupImportButton) {
+    backupImportButton.addEventListener("click", async function () {
+      var capacitor = window.Capacitor;
+      var isNative = Boolean(capacitor &&
+        typeof capacitor.isNativePlatform === "function" && capacitor.isNativePlatform());
+      var backupFeedback = document.getElementById("backupFeedback");
+      backupImportButton.disabled = true;
+      try {
+        if (isNative) {
+          if (typeof capacitor.registerPlugin !== "function") throw new Error("Pemilih file Android belum tersedia. Pasang APK terbaru.");
+          var plugin = capacitor.registerPlugin("DuitKuExport");
+          if (!plugin || typeof plugin.chooseBackupFile !== "function") throw new Error("Fitur pulihkan cadangan belum tersedia. Pasang APK terbaru.");
+          var result = await plugin.chooseBackupFile();
+          if (result && result.cancelled) return;
+          if (!result || typeof result.content !== "string") throw new Error("File cadangan tidak dapat dibaca.");
+          if (result.content.length > 15 * 1024 * 1024) throw new Error("File cadangan terlalu besar (maksimal 15 MB).");
+          await restoreBackupText(result.content);
+        } else {
+          if (backupFileInput) backupFileInput.click();
+        }
+      } catch (error) {
+        var message = error && error.message ? error.message : "Cadangan belum dapat dipulihkan.";
+        if (backupFeedback) backupFeedback.textContent = message;
+        showToast(message, true);
+      } finally {
+        backupImportButton.disabled = false;
+      }
+    });
+  }
+  if (backupFileInput) {
+    backupFileInput.addEventListener("change", async function () {
+      var file = backupFileInput.files && backupFileInput.files[0];
+      if (!file) return;
+      var backupFeedback = document.getElementById("backupFeedback");
+      try {
+        if (file.size > 15 * 1024 * 1024) throw new Error("Ukuran file cadangan terlalu besar (maksimal 15 MB).");
+        var content = await readBackupFile(file);
+        await restoreBackupText(content);
+      } catch (error) {
+        var message = error && error.message ? error.message : "Cadangan belum dapat dipulihkan.";
+        if (backupFeedback) backupFeedback.textContent = message;
+        showToast(message, true);
+      } finally {
+        backupFileInput.value = "";
+      }
+    });
+  }
 
   document.getElementById("todayLabel").textContent = new Intl.DateTimeFormat("id-ID", {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
