@@ -45,7 +45,7 @@ assert.ok(html.includes('id="savingsRateValue"'), "Statistics cards are rendered
 assert.ok(html.includes('id="monthlyTransactionCount"'), "Monthly transaction count statistic is rendered");
 assert.ok(html.includes('id="netFlowRing"') && html.includes('id="savingsRateRing"'), "Circular statistic indicators are rendered");
 assert.ok(app.includes("ACTION_CREATE_DOCUMENT") === false, "Android saving is delegated to the native document picker");
-assert.ok(app.includes('saveSpreadsheet({ fileName: fileName, content: workbook })'), "Excel file is sent to the Android save bridge");
+assert.ok(app.includes('exportPlugin.shareSpreadsheet({ fileName: fileName, content: workbook })'), "Excel file is sent to the Android save bridge");
 assert.ok(androidBranding.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android export opens the system Save As picker");
 assert.ok(androidBranding.includes("@ActivityCallback"), "Android export waits for the document picker result");
 assert.ok(androidBranding.includes("openOutputStream(targetUri"), "Android export writes the workbook to the chosen file URI");
