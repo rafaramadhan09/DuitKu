@@ -14,6 +14,8 @@ Aplikasi pencatat keuangan pribadi untuk membantu mengelola pemasukan, pengeluar
 - Memisahkan saldo cash dan m-banking/e-wallet.
 - Mencatat penarikan M-Banking ke Cash sebagai transfer antardompet; saldo M-Banking berkurang dan Cash bertambah tanpa dihitung sebagai pengeluaran.
 - Ekspor Excel Android melalui pemilih dokumen sistem agar laporan .xls dapat disimpan langsung ke Download atau folder pilihan.
+- Cadangkan seluruh transaksi ke JSON dan pulihkan file cadangan dari Android atau browser.
+- Melindungi data lokal yang tidak valid agar tidak tertimpa otomatis; aplikasi meminta pemulihan sebelum mengizinkan perubahan.
 - Pembaruan fitur web dapat diterapkan langsung dari dalam aplikasi saat online; perubahan komponen Android inti tetap memerlukan paket aplikasi baru.
 - Dashboard statistik berisi tren arus kas, komposisi kategori, arus kas bersih, rata-rata harian dan rasio sisa uang; desain mobile responsif dengan animasi halus yang tidak berlebihan.
 - Identitas visual monogram DK yang menyambung pada ikon aplikasi dan launcher Android.
@@ -29,7 +31,7 @@ Aplikasi menggunakan HTML, CSS, dan JavaScript tanpa dependensi tambahan.
 
 ## Penyimpanan data
 
-Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan. Versi ini belum menggunakan akun, server, atau sinkronisasi antarperangkat. Ekspor laporan Excel (.xls) secara berkala untuk membuat cadangan.
+Data transaksi disimpan di `localStorage` browser pada perangkat yang digunakan. Versi ini belum menggunakan akun, server, atau sinkronisasi antarperangkat. Simpan file cadangan JSON dan laporan Excel (.xls) secara berkala. Pemulihan JSON mengganti daftar transaksi saat ini, setelah konfirmasi.
 
 ## Struktur file
 
@@ -55,10 +57,10 @@ Repository ini juga menyiapkan build Android menggunakan Capacitor 8.
 1. Buka tab **Actions** pada repository untuk proses build dan pengelolaan rilis.
 2. Pilih workflow **Build & Release DuitKu Android**.
 3. Klik **Run workflow**.
-4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.5.1`. Kosongkan input tersebut untuk hanya membuat artifact APK.
+4. Untuk membuat GitHub Release versi stabil, isi input `release_version`, misalnya `v1.5.2`. Kosongkan input tersebut untuk hanya membuat artifact APK.
 5. Setelah workflow berhasil, unduh APK dari GitHub Release atau artifact `DuitKu-debug-apk`.
 
-Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.5.1**. Pembaruan fitur dilakukan langsung dari dalam DuitKu: saat aplikasi dibuka, pemeriksa internal membaca manifest versi dan mengambil HTML, CSS, serta JavaScript terbaru tanpa membuka browser, halaman GitHub, atau meminta unduh APK. Pengguna juga dapat memeriksa dan memasang update melalui menu Laporan & Data. Pembaruan komponen Android native tetap membutuhkan paket aplikasi. Mode perangkat tersedia sebagai Otomatis, Ringan, atau Visual Lengkap; font menggunakan font sistem agar tidak perlu mengunduh font online.
+Versi aplikasi mengikuti Semantic Versioning, saat ini **DuitKu 1.5.2**. Pembaruan fitur dilakukan langsung dari dalam DuitKu: saat aplikasi dibuka, pemeriksa internal membaca manifest versi dan mengambil HTML, CSS, serta JavaScript terbaru tanpa membuka browser, halaman GitHub, atau meminta unduh APK. Pengguna juga dapat memeriksa dan memasang update melalui menu Laporan & Data. Pembaruan komponen Android native tetap membutuhkan paket aplikasi. Mode perangkat tersedia sebagai Otomatis, Ringan, atau Visual Lengkap; font menggunakan font sistem agar tidak perlu mengunduh font online.
 
 **Catatan distribusi:** workflow saat ini menghasilkan APK debug agar mudah diuji. Ini belum merupakan paket produksi bertanda tangan permanen untuk Play Store. Kunci debug Android disimpan pada cache GitHub Actions agar build selanjutnya memakai sertifikat yang sama. Versi debug lama yang dibuat sebelum cache kunci tersedia mungkin perlu migrasi instalasi sekali; ekspor Excel terlebih dahulu sebagai cadangan.
 
