@@ -150,7 +150,7 @@ jobs:
           - Transfer antar-dompet tetap tidak dihitung sebagai pemasukan atau pengeluaran.
           - Update fitur HTML/CSS/JavaScript tetap diterapkan dari dalam DuitKu; perubahan native membutuhkan APK.
           - Data transaksi tetap berada di perangkat kecuali pengguna sendiri mengekspor file cadangan.
-NOTES
+          NOTES
 
           if ! gh release view "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DuitKu $RELEASE_VERSION" --notes-file release-notes.md --draft
