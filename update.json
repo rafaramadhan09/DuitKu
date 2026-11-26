@@ -1,6 +1,6 @@
 {
   "name": "DuitKu",
   "channel": "stable",
-  "version": "1.5.0",
-  "message": "Tampilan premium baru, diagram 6/12 bulan, dan mode ringan untuk HP Android."
+  "version": "1.5.1",
+  "message": "Ekspor Excel langsung tersimpan melalui pemilih folder Android, statistik lingkaran, dan penyempurnaan semua halaman."
 }

@@ -6,6 +6,7 @@ const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const bootstrap = await readFile(new URL("../app-bootstrap.js", import.meta.url), "utf8");
+const androidBranding = await readFile(new URL("../scripts/apply-android-branding.mjs", import.meta.url), "utf8");
 const update = JSON.parse(await readFile(new URL("../update.json", import.meta.url), "utf8"));
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 
@@ -42,6 +43,16 @@ assert.ok(app.includes('button.getAttribute("data-delete")'), "Delete action is 
 assert.ok(html.includes('id="cancelEditButton"'), "Edit cancellation control is rendered");
 assert.ok(html.includes('id="savingsRateValue"'), "Statistics cards are rendered");
 assert.ok(html.includes('id="monthlyTransactionCount"'), "Monthly transaction count statistic is rendered");
+assert.ok(html.includes('id="netFlowRing"') && html.includes('id="savingsRateRing"'), "Circular statistic indicators are rendered");
+assert.ok(app.includes("ACTION_CREATE_DOCUMENT") === false, "Android saving is delegated to the native document picker");
+assert.ok(app.includes('saveSpreadsheet({ fileName: fileName, content: workbook })'), "Excel file is sent to the Android save bridge");
+assert.ok(androidBranding.includes("Intent.ACTION_CREATE_DOCUMENT"), "Android export opens the system Save As picker");
+assert.ok(androidBranding.includes("@ActivityCallback"), "Android export waits for the document picker result");
+assert.ok(androidBranding.includes("openOutputStream(targetUri"), "Android export writes the workbook to the chosen file URI");
+assert.ok(app.includes("new Blob([workbook]"), "Browser export creates an Excel-compatible workbook");
+assert.ok(css.includes(".stat-ring{"), "Circular stat indicators have dedicated styling");
+assert.ok(css.includes(".app-page>.page-heading{"), "Every page has a consistent premium page header");
+
 assert.ok(html.includes('data-chart-range="12"'), "Twelve-month chart range is available");
 assert.ok(html.includes('id="performanceMode"'), "User can choose device performance mode");
 assert.ok(app.includes("duitku-performance-mode"), "Performance preference is saved");

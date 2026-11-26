@@ -1425,3 +1425,126 @@ html.lite-mode .app-page.active{animation:none!important;filter:none!important}
 @media(prefers-reduced-motion:reduce){
   .wallet-card::before,.brand-mark::after,.app-update-icon{animation:none!important}
 }
+
+
+/* DuitKu 1.5.1 — clear page hierarchy and circular statistics */
+
+.app-page>.page-heading{
+  position:relative;
+  isolation:isolate;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:22px;
+  min-height:124px;
+  margin:10px 0 20px;
+  padding:24px 26px;
+  overflow:hidden;
+  border:1px solid #e3ebe2;
+  border-radius:22px;
+  background:linear-gradient(120deg,#fff 0%,#f8faf6 66%,#f1f5ee 100%);
+  box-shadow:0 8px 24px rgba(17,48,32,.04),inset 0 1px 0 #fff;
+}
+.app-page>.page-heading:after{
+  position:absolute;z-index:-1;right:-45px;top:-112px;width:255px;height:255px;
+  border:1px solid rgba(190,160,105,.18);border-radius:50%;
+  box-shadow:0 0 0 16px rgba(190,160,105,.035),0 0 0 38px rgba(190,160,105,.025);
+  content:"";pointer-events:none;
+}
+.app-page>.page-heading>div,.app-page>.page-heading>.button{position:relative;z-index:1}
+.app-page>.page-heading h1{margin:3px 0 7px;color:#193b2a;font-size:clamp(24px,3vw,31px);line-height:1.13;letter-spacing:-.045em}
+.app-page>.page-heading .page-subtitle{max-width:62ch;margin:0;color:#849187;font-size:12px;line-height:1.65}
+.app-page>.page-heading .eyebrow{margin:0 0 8px;color:#a48653;font-size:9px;font-weight:850;letter-spacing:.18em}
+.app-page>.page-heading>.button{flex:0 0 auto;min-height:43px;border-radius:12px}
+.app-page>.panel,.app-page>.wallet-overview,.app-page>.insights-grid{margin-top:15px}
+.panel{border-radius:20px}
+.panel-heading{gap:14px}
+.panel-heading h2{font-size:16px;font-weight:780}
+.panel-subtitle{line-height:1.65}
+.transactions-panel{overflow:hidden}
+.transactions-heading{padding-bottom:15px;border-bottom:1px solid #edf1ec}
+.transaction-tools{align-items:center;gap:12px;padding:15px 0}
+.filter-tabs{padding:4px;border-radius:12px}
+.filter-tab{min-height:34px;padding:0 13px;border-radius:9px}
+.search-box{min-height:40px;border-radius:12px}
+.table-wrap{border-radius:0 0 16px 16px}
+.table-wrap thead th{padding-top:14px;padding-bottom:14px;color:#8b978e;font-size:9px;letter-spacing:.09em}
+.table-wrap tbody tr{transition:background .18s ease}
+.table-wrap tbody tr:hover{background:#fbfcfa}
+.form-page-panel{max-width:790px;margin:0 auto;padding:25px!important}
+.form-page-panel>.panel-heading{padding-bottom:17px;border-bottom:1px solid #edf1ec;margin-bottom:18px}
+.form-page-panel .field-label{display:block;margin:15px 0 7px;color:#52665a;font-size:11px;font-weight:760}
+.form-page-panel .field-input{min-height:44px;border-radius:11px}
+.form-page-panel .note-input{min-height:78px;padding:12px}
+.form-page-panel .submit-button{min-height:46px;margin-top:21px;border-radius:12px}
+.form-page-panel .form-note{margin-top:12px;color:#89968c;font-size:10px}
+.type-switch{padding:7px;border:1px solid #e8eee7;border-radius:14px;background:#f8faf7}
+.type-option{min-height:43px;border-radius:10px}
+.wallet-page-cards{gap:14px;margin:0 0 16px}
+.wallet-page-cards .wallet-card{min-height:178px;padding:22px;border-radius:20px}
+.transfer-panel,.wallet-note{margin-top:15px}
+.transfer-panel{padding:24px!important}
+.transfer-route{margin:17px 0;padding:14px;border:1px solid #e8eee7;border-radius:14px;background:#f7faf6}
+.transfer-form{max-width:540px}
+.wallet-note{padding:22px!important}
+.export-panel{position:relative;overflow:hidden;max-width:760px;margin:0 auto;padding:30px!important;border-radius:22px;text-align:left}
+.export-panel:after{position:absolute;right:-55px;top:-74px;width:200px;height:200px;border:1px solid rgba(190,160,105,.18);border-radius:50%;box-shadow:0 0 0 18px rgba(190,160,105,.035);content:"";pointer-events:none}
+.export-panel>*{position:relative;z-index:1}
+.export-panel h2{margin:12px 0 7px;color:#244332;font-size:20px}
+.export-panel>.panel-subtitle{max-width:58ch;margin-bottom:17px}
+.export-panel .button{min-height:45px;border-radius:12px}
+.export-caption{max-width:62ch;margin:15px 0 0;color:#89958c;font-size:10px;line-height:1.7}
+.performance-panel,.app-update-panel{border-radius:20px}
+.app-update-panel{margin-top:15px;padding:23px!important}
+.page-footer{margin-top:24px;padding:15px 2px;color:#8c988f;font-size:10px}
+.stats-strip{gap:12px;margin:16px 0}
+.stats-strip .stat-card{
+  position:relative;isolation:isolate;min-height:118px;overflow:hidden;
+  padding:17px 82px 15px 17px;border-radius:18px;
+}
+.stats-strip .stat-card>span{display:block;max-width:100%;line-height:1.5}
+.stats-strip .stat-card>strong{display:block;max-width:100%;margin:7px 0 5px;font-size:clamp(16px,1.7vw,20px);line-height:1.2;overflow-wrap:anywhere}
+.stats-strip .stat-card>small{display:block;max-width:100%;font-size:9px;line-height:1.45}
+.stat-ring{
+  position:absolute;right:15px;top:50%;display:grid;width:54px;aspect-ratio:1;
+  place-items:center;border-radius:50%;
+  background:conic-gradient(var(--ring-color,#4c956c) 0 var(--ring-pct,0%),#e9eee8 var(--ring-pct,0%) 100%);
+  transform:translateY(-50%);box-shadow:0 4px 12px rgba(22,62,39,.08);
+}
+.stat-ring:before{
+  position:absolute;inset:5px;border-radius:50%;background:#fff;content:"";
+  box-shadow:inset 0 0 0 1px rgba(225,234,224,.85);
+}
+.stat-ring span{position:relative;z-index:1;color:#355641;font-size:9px;font-weight:850;font-variant-numeric:tabular-nums}
+.stat-net .stat-ring:before{background:#f8fbf7}
+.stat-rate .stat-ring:before{background:#fbfcf9}
+.stat-activity .stat-ring:before{background:#fffdf8}
+@media(max-width:760px){
+  .app-page>.page-heading{display:block!important;min-height:0;margin:8px 0 15px!important;padding:19px 18px!important;border-radius:19px}
+  .app-page>.page-heading h1{font-size:25px!important}
+  .app-page>.page-heading .page-subtitle{font-size:11px}
+  .app-page>.page-heading>.button{width:100%;margin-top:14px}
+  .stats-strip{gap:9px;margin:12px 0}
+  .stats-strip .stat-card{min-height:111px;padding:13px 66px 12px 13px;border-radius:15px}
+  .stats-strip .stat-card>strong{font-size:16px;margin:6px 0 4px}
+  .stats-strip .stat-card>small{font-size:8px}
+  .stat-ring{right:9px;width:47px}
+  .stat-ring:before{inset:4px}
+  .stat-ring span{font-size:8px}
+  .transactions-heading{padding-bottom:13px}
+  .transaction-tools{display:flex!important;flex-direction:column;align-items:stretch}
+  .filter-tabs{display:grid;grid-template-columns:repeat(3,1fr)}
+  .filter-tab{padding:0 6px}
+  .form-page-panel{padding:18px!important}
+  .wallet-page-cards{gap:9px}
+  .wallet-page-cards .wallet-card{min-height:155px;padding:15px}
+  .transfer-panel,.wallet-note,.app-update-panel{padding:18px!important}
+  .export-panel{padding:21px!important}
+  .performance-panel{border-radius:18px}
+  .page-footer{margin-top:17px}
+}
+@media(max-width:380px){
+  .stats-strip .stat-card{padding-right:59px}
+  .stat-ring{width:43px;right:8px}
+  .stats-strip .stat-card>strong{font-size:15px}
+}

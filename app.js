@@ -228,6 +228,37 @@
     if (rateMeter) rateMeter.style.width = Math.max(0, Math.min(100, rate)) + "%";
     if (netFoot) netFoot.textContent = net >= 0 ? "Arus kas bulan ini positif" : "Pengeluaran melebihi pemasukan";
     if (countNode) countNode.textContent = String(monthTransactionCount);
+
+    function setStatRing(ringId, labelId, percentage, color, label) {
+      var ring = document.getElementById(ringId);
+      var ringLabel = document.getElementById(labelId);
+      var bounded = Math.max(0, Math.min(100, Number(percentage) || 0));
+      if (ring) {
+        ring.style.setProperty("--ring-pct", bounded.toFixed(1) + "%");
+        ring.style.setProperty("--ring-color", color);
+      }
+      if (ringLabel) ringLabel.textContent = label || Math.round(bounded) + "%";
+    }
+    var netRatio = totals.income > 0 ? Math.abs(net) / totals.income * 100 : 0;
+    var averageDaily = totals.expense / elapsedDays;
+    var peakDailyAverage = averageDaily;
+    for (var monthOffset = 0; monthOffset < 6; monthOffset++) {
+      var monthDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+      var monthTotals = totalsForMonth(monthDate.getFullYear() + "-" +
+        String(monthDate.getMonth() + 1).padStart(2, "0"));
+      var daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+      peakDailyAverage = Math.max(peakDailyAverage, monthTotals.expense / daysInMonth);
+    }
+    var averageRing = peakDailyAverage > 0 ? averageDaily / peakDailyAverage * 100 : 0;
+    setStatRing("netFlowRing", "netFlowRingLabel", netRatio,
+      net < 0 ? "#c27b70" : "#4c956c", Math.round(Math.min(100, netRatio)) + "%");
+    setStatRing("averageExpenseRing", "averageExpenseRingLabel", averageRing,
+      "#c09a61", Math.round(averageRing) + "%");
+    setStatRing("savingsRateRing", "savingsRateRingLabel", Math.max(0, rate),
+      "#4c956c", Math.round(Math.max(0, Math.min(100, rate))) + "%");
+    setStatRing("monthlyTransactionRing", "monthlyTransactionRingLabel",
+      Math.min(100, monthTransactionCount / 30 * 100), "#b79a66",
+      String(Math.min(30, monthTransactionCount)));
   }
 
   function renderCashflow() {
@@ -409,7 +440,7 @@
     renderTransactions();
   }
 
-  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.0";
+  var installedVersion = (document.querySelector('meta[name="duitku-version"]') || {}).content || "1.5.1";
   var updateCheckButton = document.getElementById("checkUpdateButton");
   var updateApplyButton = document.getElementById("applyUpdateButton");
   var updateStatus = document.getElementById("updateStatus");
@@ -742,21 +773,30 @@
 
   document.getElementById("exportButton").addEventListener("click", async function () {
     var feedbackNode = document.getElementById("exportFeedback");
+    function report(message, isError) {
+      if (feedbackNode) feedbackNode.textContent = message;
+      showFeedback(message, Boolean(isError));
+      if (isError) showToast("Ekspor belum berhasil. Coba lagi.", true);
+    }
+
     if (!transactions.length) {
-      if (feedbackNode) feedbackNode.textContent = "Belum ada transaksi untuk diekspor.";
-      showFeedback("Belum ada transaksi untuk diekspor.", true);
+      report("Belum ada transaksi untuk diekspor.", true);
       return;
     }
 
     function xml(value) {
-      return String(value == null ? "" : value).replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
     function cell(value, type) {
-      return "<Cell><Data ss:Type=\"" + (type || "String") + "\">" + xml(value) + "</Data></Cell>";
+      return "<Cell><Data ss:Type=\"" + (type || "String") + "\">" +
+        xml(value) + "</Data></Cell>";
     }
 
-    var sorted = transactions.slice().sort(function (a, b) { return a.date.localeCompare(b.date); });
+    var sorted = transactions.slice().sort(function (a, b) {
+      return String(a.date || "").localeCompare(String(b.date || ""));
+    });
     var rows = "<Row>" + ["Tanggal", "Jenis", "Nama transaksi", "Kategori", "Dompet / Alur", "Jumlah (IDR)", "Catatan"]
       .map(function (value) { return cell(value); }).join("") + "</Row>";
     sorted.forEach(function (item) {
@@ -766,17 +806,20 @@
         : (item.wallet === "cash" ? "Cash" : "M-Banking");
       var typeLabel = transfer ? "Transfer" : (item.type === "income" ? "Pemasukan" : "Pengeluaran");
       rows += "<Row>" + [
-        item.date, typeLabel, item.name, item.category, walletLabel, Number(item.amount), item.note || ""
-      ].map(function (value, index) { return cell(value, index === 5 ? "Number" : "String"); }).join("") + "</Row>";
+        item.date, typeLabel, item.name, item.category, walletLabel,
+        Number(item.amount) || 0, item.note || ""
+      ].map(function (value, index) {
+        return cell(value, index === 5 ? "Number" : "String");
+      }).join("") + "</Row>";
     });
 
     var balances = walletBalances();
     var totalIncome = transactions.filter(function (item) { return item.type === "income"; })
-      .reduce(function (sum, item) { return sum + Number(item.amount); }, 0);
+      .reduce(function (sum, item) { return sum + (Number(item.amount) || 0); }, 0);
     var totalExpense = transactions.filter(function (item) { return item.type === "expense"; })
-      .reduce(function (sum, item) { return sum + Number(item.amount); }, 0);
+      .reduce(function (sum, item) { return sum + (Number(item.amount) || 0); }, 0);
     var totalTransfer = transactions.filter(function (item) { return item.type === "transfer"; })
-      .reduce(function (sum, item) { return sum + Number(item.amount); }, 0);
+      .reduce(function (sum, item) { return sum + (Number(item.amount) || 0); }, 0);
     var summary = "<Row>" + cell("Ringkasan") + cell("Nilai") + "</Row>" +
       "<Row>" + cell("Total Saldo") + cell(balances.bank + balances.cash, "Number") + "</Row>" +
       "<Row>" + cell("Saldo M-Banking") + cell(balances.bank, "Number") + "</Row>" +
@@ -793,36 +836,61 @@
 
     try {
       var capacitor = window.Capacitor;
-      var isNative = Boolean(capacitor && typeof capacitor.isNativePlatform === "function" && capacitor.isNativePlatform());
-      if (isNative && typeof capacitor.registerPlugin === "function") {
+      var isNative = Boolean(capacitor &&
+        typeof capacitor.isNativePlatform === "function" &&
+        capacitor.isNativePlatform());
+
+      if (isNative) {
+        if (typeof capacitor.registerPlugin !== "function") {
+          throw new Error("Fitur penyimpanan Excel Android belum tersedia. Pasang versi aplikasi terbaru.");
+        }
         var exportPlugin = capacitor.registerPlugin("DuitKuExport");
-        await exportPlugin.shareSpreadsheet({ fileName: fileName, content: workbook });
-        if (feedbackNode) feedbackNode.textContent = "Laporan siap dibagikan. Pilih Excel, Drive, atau Simpan di perangkat pada menu Android.";
-        showFeedback("File Excel berhasil dibuat.");
-        showToast("Pilih aplikasi tujuan untuk menyimpan laporan Excel.");
+        if (!exportPlugin || typeof exportPlugin.shareSpreadsheet !== "function") {
+          throw new Error("Jembatan ekspor Excel Android tidak ditemukan. Tutup lalu buka ulang aplikasi.");
+        }
+        var saveResult = await exportPlugin.shareSpreadsheet({ fileName: fileName, content: workbook });
+        if (saveResult && saveResult.cancelled) {
+          report("Penyimpanan dibatalkan. File belum dibuat.", false);
+          return;
+        }
+        if (!saveResult || saveResult.saved !== true) {
+          throw new Error("Android belum mengonfirmasi penyimpanan file Excel.");
+        }
+        report("File Excel berhasil disimpan ke folder yang kamu pilih.", false);
+        showToast("Laporan Excel berhasil disimpan.");
         return;
       }
 
-      var file = new File([fileBlob], fileName, { type: "application/vnd.ms-excel" });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: "Laporan DuitKu", files: [file] });
-      } else {
+      if (typeof File === "function" && navigator.share && typeof navigator.canShare === "function") {
+        var file = new File([fileBlob], fileName, { type: "application/vnd.ms-excel" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: "Laporan DuitKu", files: [file] });
+          report("File Excel berhasil dibagikan.", false);
+          return;
+        }
+      }
+
+      if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
         var url = URL.createObjectURL(fileBlob);
         var link = document.createElement("a");
         link.href = url;
         link.download = fileName;
+        link.style.display = "none";
         document.body.appendChild(link);
         link.click();
         link.remove();
-        window.setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+        report("File Excel disiapkan. Periksa folder Unduhan perangkatmu.", false);
+        return;
       }
-      if (feedbackNode) feedbackNode.textContent = "File Excel berhasil disiapkan.";
-      showFeedback("File Excel berhasil diekspor.");
+      throw new Error("Perangkat ini tidak mendukung penyimpanan file. Coba gunakan menu berbagi file.");
     } catch (error) {
+      if (error && error.name === "AbortError") {
+        report("Penyimpanan dibatalkan.", false);
+        return;
+      }
       var message = error && error.message ? error.message : "Tidak dapat membuat file Excel.";
-      if (feedbackNode) feedbackNode.textContent = message;
-      showFeedback(message, true);
-      showToast("Ekspor belum berhasil. Coba lagi.", true);
+      report(message, true);
     }
   });
 
