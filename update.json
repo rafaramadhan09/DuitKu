@@ -1,6 +1,6 @@
 {
   "name": "DuitKu",
   "channel": "stable",
-  "version": "1.6.0",
-  "message": "Penyegaran premium seluruh halaman, navigasi lebih jelas, formulir lebih nyaman, dan tampilan HP yang lebih rapi."
+  "version": "1.6.1",
+  "message": "Perbaikan simpan Excel: Android 10 ke atas menyimpan otomatis ke Download/DuitKu. Tampilan premium seluruh halaman tetap tersedia."
 }
