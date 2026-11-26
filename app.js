@@ -796,14 +796,17 @@
     document.documentElement.classList.add("ui-ready");
   }
 
+  function runWhenReady(callback) {
+    if (document.readyState === "complete") callback();
+    else window.addEventListener("load", callback, { once: true });
+  }
+
   if (updateCheckButton && navigator.onLine) {
-    window.addEventListener("load", function () {
-      checkForAppUpdate(true);
-    });
+    runWhenReady(function () { checkForAppUpdate(true); });
   }
 
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
+    runWhenReady(function () {
       navigator.serviceWorker.register("./service-worker.js").catch(function (error) {
         console.warn("DuitKu offline support could not be registered:", error);
       });
